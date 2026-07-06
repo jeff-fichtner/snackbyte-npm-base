@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Env / secrets — never commit, never ship (Constitution II)
+.env
+.env.*
+!.env.example
+
+# npm publish artifacts
+*.tgz
+
+# Logs / OS / editor cruft
+*.log
+npm-debug.log*
+.DS_Store
+
+# Spec Kit local feature state (per-shell, not shared)
+.specify/feature.json
