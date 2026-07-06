@@ -1,0 +1,41 @@
+# Release flow for this repo — consumes jeff-fichtner/snackbyte-release-flow-action@v1.
+#
+# This is a LIBRARY consumer (version-strategy: package-json): the version is the intentional
+# SemVer set in package.json, and the Action tags it verbatim (v<version>). It does NOT invent a
+# build-id patch. To cut a release: bump package.json `version`, push to main; the Action tags it.
+# If the tag already exists (you forgot to bump), the Action fails loudly — bump and push again.
+#
+# NOTE: this repo is the TEMPLATE (`private: true`), so there is no real `npm publish` step wired —
+# the publish is left as an inert, is-env-gated placeholder. A spun-out package replaces that
+# placeholder with a real `npm publish` (see the Action's CONSUMING.md, Recipe B).
+name: release
+
+on:
+  push:
+    branches: [main] # the only release channel (see environments.json)
+
+permissions:
+  contents: write # push the derived tag
+
+concurrency:
+  group: release-${{ github.ref_name }} # serialize per branch — no two pushes race
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # full history + tags — the derivation refuses a shallow clone
+
+      - id: release
+        uses: jeff-fichtner/snackbyte-release-flow-action@v1
+        with:
+          version-strategy: package-json # library: tag the package.json version verbatim
+
+      # Publish placeholder — real packages replace this with `npm publish`, gated on is-env.
+      - if: steps.release.outputs.is-env == 'true'
+        run: |
+          echo "Release channel confirmed. Derived tag: ${{ steps.release.outputs.tag }}"
+          echo "(Template repo: no npm publish wired. A spun-out package publishes here.)"

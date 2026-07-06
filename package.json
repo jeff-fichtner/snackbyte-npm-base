@@ -1,0 +1,16 @@
+{
+  "name": "snackbyte-npm-base",
+  "version": "0.1.0",
+  "description": "The npm-library template for the snackbyte ecosystem — the publishable-package sibling of snackbyte-base.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "author": "Jeff Fichtner",
+  "engines": {
+    "node": ">=24"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jeff-fichtner/snackbyte-npm-base.git"
+  }
+}
