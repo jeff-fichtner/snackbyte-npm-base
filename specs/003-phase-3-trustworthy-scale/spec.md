@@ -10,47 +10,57 @@
 supply-chain and trust bar for a package strangers depend on.
 
 > **Stub note:** Phase stub converted from `PHASES.md`. Refine with `/speckit-clarify`
-> and `/speckit-plan` before implementing. Builds on Phase 2's CI-on-tag publish path.
+> and `/speckit-plan` before implementing. Builds on Phase 2's trusted-publishing path.
+
+> **Amended 2026-09-20** under constitution v1.1.0: TypeScript is the default source mode; CI publishes by trusted publishing; the first publish of a new package is a bootstrap. See the constitution's amendment log for why. Two of this
+> phase's stories became inherent to earlier phases: provenance (automatic with trusted
+> publishing, Phase 2) and shipped types (automatic in `ts` mode, Phase 0). They stay
+> below reduced to what remains.
 
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Provenance-signed publishes (Priority: P1)
 
-Every release is published with `npm publish --provenance` — a signed attestation of
-what built the package and from which commit — so consumers get the modern trust
-baseline.
+Every CI release already carries a provenance attestation — trusted publishing (Phase
+2) generates it without a flag. What remains here: verify it is present on each release,
+and document for consumers how to check it.
 
 **Why this priority**: Constitution IV — provenance is the trust baseline for a package
-strangers depend on. It is the defining capability of Phase 3.
+strangers depend on. Reduced from "add it" to "prove it and explain it" by the v1.1.0
+amendment.
 
 **Independent Test**: Publish through CI; confirm the published version carries a
-provenance attestation on the registry.
+provenance attestation on the registry and that the README's verification note works.
 
 **Acceptance Scenarios**:
 
-1. **Given** a CI release, **When** published, **Then** the version carries a
-   `--provenance` attestation tied to the source commit.
+1. **Given** a CI release, **When** published, **Then** the version carries a provenance
+   attestation tied to the source commit, with no `--provenance` flag in the workflow.
 2. **Given** the registry page, **When** viewed, **Then** the provenance signal is
-   present.
+   present, and the README says how a consumer verifies it.
 
 ---
 
 ### User Story 2 - 2FA-required, per-package scoped, rotated tokens (Priority: P1)
 
-Publishes require 2FA, automation tokens are scoped per-package where possible, and
-tokens are rotated on a schedule — minimizing blast radius if a token leaks.
+2FA is enforced on the publishing account (it gates the bootstrap publish and any
+account-level change), and each package's trusted-publisher configuration is reviewed
+so only its own repo and workflow may publish it. There are no automation tokens to
+scope or rotate — trusted publishing removed them.
 
-**Why this priority**: Supply-chain hardening. A per-package token limits damage; 2FA
-and rotation are baseline hygiene for a widely-depended-on package.
+**Why this priority**: Supply-chain hardening. With no token, the blast radius of a
+leak is zero; what remains is keeping the account and the per-package publisher
+configs tight.
 
-**Independent Test**: Confirm publish fails without 2FA; confirm each package's CI uses
-its own scoped token; confirm a rotation runbook exists and has been exercised.
+**Independent Test**: Confirm a bootstrap publish fails without 2FA; confirm each
+package's trusted-publisher list names exactly its own repo and workflow.
 
 **Acceptance Scenarios**:
 
-1. **Given** a publish attempt without 2FA, **When** run, **Then** it is rejected.
-2. **Given** two packages, **When** inspected, **Then** each uses its own per-package
-   scoped automation token where the registry allows it.
+1. **Given** a bootstrap publish attempt without 2FA, **When** run, **Then** it is
+   rejected.
+2. **Given** two packages, **When** their trusted publishers are inspected, **Then**
+   each names exactly its own repo and workflow, and no npm token exists for either.
 
 ---
 
@@ -76,11 +86,13 @@ count is justified (no gratuitous deps).
 
 ### User Story 4 - Types shipped (Priority: P1)
 
-If the package exposes a library API, it ships types (`types` / `exports.types`) or a
-`// @ts-check`'d JS surface — so consumers get editor support out of the box.
+A `ts`-mode package ships types by construction (`exports.types` → `dist/*.d.ts`,
+Phase 0). This story covers the opt-out: a `js`-mode package with a library API must
+ship a `// @ts-check`'d surface or hand-written `.d.ts` so consumers still get editor
+support.
 
 **Why this priority**: Consumers of a public library expect type support; its absence is
-a visible quality gap. Load-bearing for a library API.
+a visible quality gap. Load-bearing for a library API; already true for the default.
 
 **Independent Test**: Import the package into a TypeScript project; confirm types
 resolve and autocomplete works for the public surface.
@@ -135,19 +147,21 @@ exist and are accurate.
   not covered by the install matrix?
 - What happens if dual ESM/CJS is added without real demand? (Added footguns for no
   benefit — must be avoided.)
-- What happens when a scoped per-package token is unavailable on the registry tier?
+- What happens when a `js`-mode package's hand-written `.d.ts` drifts from its
+  runtime surface? (Nothing catches it automatically — a reason the default is `ts`.)
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: Releases MUST be published with `--provenance` tied to the source commit.
-- **FR-002**: Publishes MUST require 2FA; automation tokens MUST be scoped per-package
-  where possible and rotated on a schedule.
+- **FR-001**: Every CI release MUST carry a provenance attestation tied to the source
+  commit (inherent to trusted publishing), and the README MUST say how to verify it.
+- **FR-002**: The publishing account MUST require 2FA; each package's trusted-publisher
+  configuration MUST name only its own repo and workflow; no npm token MUST exist.
 - **FR-003**: The package MUST have automated dependency updates (Dependabot/Renovate)
   and MUST keep its dependency surface minimal and justified.
-- **FR-004**: A library-API package MUST ship types via `types` / `exports.types` (or a
-  `// @ts-check`'d JS surface).
+- **FR-004**: A library-API package MUST ship types — inherent in `ts` mode; a
+  `js`-mode package MUST ship a `// @ts-check`'d surface or hand-written `.d.ts`.
 - **FR-005**: Dual ESM/CJS MUST be adopted only on real CJS demand; the package MUST be
   pack-and-install tested across every `engines` Node version and every advertised
   import path.
@@ -158,20 +172,22 @@ exist and are accurate.
 
 - **Provenance attestation**: the signed record of build + commit on the registry.
 - **Install matrix**: the Node-version × import-path grid the package is tested against.
-- **Per-package token**: the narrowly-scoped automation credential.
+- **Trusted-publisher configuration**: the per-package allow-list of repo + workflow on
+  npmjs.com; the thing that replaced the per-package token.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: The package is `--provenance`-published, type-complete, and audited.
+- **SC-001**: The package is provenance-attested, type-complete, and audited.
 - **SC-002**: An outside consumer on any supported Node version installs and uses the
   package with no surprises across every advertised import path.
-- **SC-003**: A publish without 2FA is rejected, and each package's CI uses its own
-  scoped token where the registry allows.
+- **SC-003**: A bootstrap publish without 2FA is rejected, and each package's trusted
+  publisher names only its own repo and workflow.
 
 ## Assumptions
 
-- Phase 2's CI-on-tag publish path is in place.
-- ESM-only remains the default; dual is a deliberate, demand-driven exception.
+- Phase 2's trusted-publishing path is in place.
+- ESM-only and TypeScript remain the defaults; dual and `js` are deliberate,
+  recorded exceptions.
 - Node floor and supported range come from the constitution's pinned defaults.

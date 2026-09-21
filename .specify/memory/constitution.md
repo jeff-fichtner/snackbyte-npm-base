@@ -44,11 +44,26 @@ in-the-moment judgment.
 
 ### IV. No Laptop Publishes (Once Automated)
 
-From Phase 2 onward, packages are never `npm publish`'d from a developer machine.
-Releases run through CI on a tag: `git tag vX.Y.Z && git push --tags` → build → test →
-publish. Tokens live in CI secrets, not a shell. Granular automation tokens, not
-classic tokens; 2FA on the account. At Phase 3, publishes carry `--provenance` — a
-signed attestation of what built the package and from which commit.
+From Phase 2 onward, packages are never `npm publish`'d from a developer machine, with
+one named exception below. A release is: bump `version` in `package.json`, merge to
+`main`; the release-flow action tags `v<version>`; CI builds, tests and publishes.
+
+CI authenticates to npm by **trusted publishing** (OIDC): GitHub mints a short-lived
+identity token per run and npm accepts it. No npm token exists anywhere — not in CI
+secrets, not in a shell — so there is nothing to leak, scope or rotate. Provenance (the
+signed attestation of what built the package and from which commit) is generated
+automatically by trusted publishing, so every CI publish carries it from Phase 2, not
+Phase 3.
+
+The exception: a trusted publisher can only be configured on a package that already
+exists on npm. So **the first publish of a new package is a bootstrap** — once, from a
+maintainer's machine, with 2FA on the account — after which the trusted publisher is
+configured and every later publish is CI. The bootstrap is a documented release step,
+never an undocumented lapse.
+
+*Amended 2026-09-20 (v1.1.0): was "CI on a tag, tokens in CI secrets, provenance at
+Phase 3." The trigger follows the release-flow action adopted after v1.0.0; the token
+is replaced by trusted publishing; provenance moves to Phase 2 as a consequence.*
 
 ### V. Deliberate Defaults, Not Per-Repo Re-Litigation
 
@@ -60,11 +75,12 @@ inertia:
 |-------------------|------------------------------|-----------------------------------------|
 | Scope             | `@snackbyte/*`               | Org namespace; reserve on npm early     |
 | Public vs private | Public unless a reason not to| Most tools are shareable                |
+| Source            | TypeScript, compiled to `dist/`, types shipped | Everything is TypeScript unless it cannot be; JS ship-source is the opt-out, with the reason recorded in that package's spec or plan |
 | Module format     | ESM-only                     | Simpler; add CJS only on real demand    |
 | License           | MIT                          | Permissive, zero-friction               |
 | Versioning        | SemVer + Changesets          | Standard, automatable                   |
-| Publish path      | CI-on-tag from Phase 2 on    | No laptop publishes                     |
-| Node floor        | Match the apps (`>=24`)      | One runtime story across snackbyte      |
+| Publish path      | CI via trusted publishing (OIDC) from Phase 2 on; the first publish of a new package is a bootstrap | No laptop publishes, no long-lived token |
+| Node floor        | `>=24`, no upper bound       | One runtime story across snackbyte; a library must install on the next Node too |
 
 ### VI. Test What Users Get, Not Your Working Tree
 
@@ -83,8 +99,10 @@ Spec Kit spec under `specs/`. A package "graduates" up the phases as it earns th
 
 - **Phase 0** — the template itself exists and can be spun out.
 - **Phase 1** — ship one correct package to prod today (correctness floor, manual publish OK).
-- **Phase 2** — repeatable & safe (CI-on-tag publish, lockfile, SemVer discipline).
-- **Phase 3** — trustworthy at scale (provenance, types shipped, audited deps, install matrix).
+- **Phase 2** — repeatable & safe (CI publish via trusted publishing, lockfile, SemVer
+  discipline; provenance comes with it).
+- **Phase 3** — trustworthy at scale (audited deps, install matrix, hygiene docs; types
+  are inherent to the TypeScript default from Phase 0).
 - **Phase 4** — fleet / ecosystem scale (shared release tooling, policy-as-code, private registry option).
 
 Each phase spec is a standalone slice: implement only Phase N and the package is still
@@ -115,4 +133,17 @@ not silently ignored.
   principle, MINOR for a new principle or materially expanded guidance, PATCH for
   clarifications and wording.
 
-**Version**: 1.0.0 | **Ratified**: 2026-07-05 | **Last Amended**: 2026-07-05
+**Version**: 1.1.0 | **Ratified**: 2026-07-05 | **Last Amended**: 2026-09-20
+
+### Amendments
+
+- **1.1.0 — 2026-09-20.** MINOR: materially expanded guidance, no principle removed.
+  (a) Principle V gains a *Source* default: TypeScript, compiled, types shipped; JS
+  ship-source is the opt-out with a recorded reason. Made when the second graduate
+  (`@snackbyte/auth-client`, TypeScript) arrived beside the first
+  (`@snackbyte/spec-render`, a JavaScript graft of working code). (b) Principle IV: the
+  release trigger is the release-flow action's bump-and-merge, not a hand-pushed tag;
+  CI authenticates by trusted publishing (OIDC) instead of a stored token; provenance
+  is therefore automatic from Phase 2; the first publish of a new package is a named
+  bootstrap. (c) The Node floor drops its upper bound for libraries. The Phase 0–3
+  specs were amended in the same change.

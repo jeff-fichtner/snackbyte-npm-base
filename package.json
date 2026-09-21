@@ -1,6 +1,6 @@
 {
   "name": "snackbyte-npm-base",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The npm-library template for the snackbyte ecosystem — the publishable-package sibling of snackbyte-base.",
   "private": true,
   "type": "module",

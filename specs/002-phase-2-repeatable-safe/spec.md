@@ -13,13 +13,21 @@ This is where the *standard* starts paying for itself across repos.
 > **Stub note:** Phase stub converted from `PHASES.md`. Refine with `/speckit-clarify`
 > and `/speckit-plan` before implementing. Builds on Phase 1's correct publish contract.
 
+> **Amended 2026-09-20** under constitution v1.1.0: TypeScript is the default source mode; CI publishes by trusted publishing; the first publish of a new package is a bootstrap. See the constitution's amendment log for why. Two things this
+> stub predated: the release-flow action (adopted after v1.0.0), which makes the trigger
+> a version bump merged to `main` rather than a hand-pushed tag; and npm trusted
+> publishing, which replaces the automation token entirely.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - CI publish on tag (Priority: P1)
 
-A maintainer releases by pushing a version tag; a GitHub Action builds, tests, and
-publishes — never `npm publish` from a laptop. Tokens live in GitHub secrets, not a
-shell.
+A maintainer releases by bumping `version` in `package.json` and merging to `main`;
+the release-flow action tags `v<version>`, and the gated step builds, tests and
+publishes — never `npm publish` from a laptop after the bootstrap. There is no token:
+CI authenticates by **trusted publishing** — GitHub mints a short-lived OIDC identity
+token per run (`permissions: id-token: write`) and npm accepts it. Provenance is
+generated automatically.
 
 **Why this priority**: Constitution IV — no laptop publishes. This removes the human and
 the local-secret risk from the release path; it is the defining capability of Phase 2.
@@ -29,31 +37,41 @@ and publishes with no local credentials involved.
 
 **Acceptance Scenarios**:
 
-1. **Given** a pushed tag `vX.Y.Z`, **When** CI runs, **Then** it builds, tests, and
-   publishes the package.
-2. **Given** the workflow, **When** inspected, **Then** the npm token comes from CI
-   secrets and never from a developer machine.
+1. **Given** a version bump merged to `main`, **When** CI runs, **Then** the action
+   tags `v<version>` and the workflow builds, tests, and publishes the package.
+2. **Given** the workflow and the repo's secrets, **When** inspected, **Then** no npm
+   token exists anywhere: the publish step has `id-token: write` and no
+   `NODE_AUTH_TOKEN`.
+3. **Given** a merge to `main` without a version bump, **When** the action runs,
+   **Then** it fails loudly on the existing tag and nothing is published.
 
 ---
 
 ### User Story 2 - One reusable org publish workflow + one automation token (Priority: P1)
 
-A single reusable org-level publish workflow and one granular automation token are wired
-once and inherited by every package — the direct fix for "don't reinvent tokens each
-time."
+A single reusable publish workflow (`workflow_call`, hosted in this template's repo) is
+inherited by every package through a thin per-package `release.yml`; each package's
+trusted publisher on npmjs.com names its own calling workflow. No token is shared
+because no token exists — the direct fix for "don't reinvent tokens each time" is that
+there is nothing to reinvent.
 
 **Why this priority**: This is the cross-repo leverage the whole template exists for.
-Without it, every package re-solves CI + tokens. Depends on the CI-on-tag flow (US1).
+Without it, every package carries its own copy of the publish logic and a template fix
+has to be applied N times. Depends on US1.
 
 **Independent Test**: Wire a second package to the reusable workflow with only its own
-config; confirm it publishes using the shared workflow and shared automation token.
+thin caller; confirm it publishes with no publish logic of its own and no secret.
 
 **Acceptance Scenarios**:
 
-1. **Given** a new package, **When** it references the reusable org workflow, **Then** it
+1. **Given** a new package, **When** it references the reusable workflow, **Then** it
    can publish without defining its own publish logic.
-2. **Given** the token, **When** inspected, **Then** it is a granular automation token,
-   not a classic token.
+2. **Given** the package on npmjs.com, **When** its trusted publishers are inspected,
+   **Then** exactly one names this repo and the calling workflow file.
+
+**To verify at implementation, not assume**: that npm's trusted-publisher match works
+against the *calling* workflow when the publish step lives in a reusable workflow, and
+which `npm` version the publish job needs (OIDC requires ≥ 11.5; upgrade in the job).
 
 ---
 
@@ -116,19 +134,26 @@ Walk the runbook to retire a version via `npm deprecate`.
 
 ### Edge Cases
 
-- What happens when a tag is pushed but CI build/test fails — is a partial publish
-  possible? (It must not be.)
-- What happens when two packages share the automation token and one needs it rotated?
+- What happens when a version bump merges but CI build/test fails — is a partial
+  publish possible? (It must not be: the tag exists, the publish step is gated on the
+  gate passing, and the fix is a new version, never a re-run of the same one.)
+- What happens when a trusted-publisher configuration must change? (Edit it on
+  npmjs.com; nothing to rotate, nothing shared between packages.)
 - What happens on a pre-release that should never become `latest`?
+- What happens on the very first publish of a new package? (It is the bootstrap —
+  Phase 1's FR-005 — and the runbook says so.)
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: Releases MUST publish via a GitHub Action triggered by a version tag;
-  publishing from a developer machine MUST NOT be part of the path.
-- **FR-002**: The npm token MUST be a granular automation token stored in CI secrets,
-  wired once via a reusable org publish workflow inherited by every package.
+- **FR-001**: Releases MUST publish via a GitHub Action triggered by a `package.json`
+  version bump merged to `main` and tagged by the release-flow action; publishing from
+  a developer machine MUST NOT be part of the path after the bootstrap.
+- **FR-002**: CI MUST authenticate to npm by trusted publishing (OIDC,
+  `permissions: id-token: write`); no long-lived npm token MUST exist in secrets or on
+  a machine; the publish logic MUST live once in a reusable workflow inherited by every
+  package.
 - **FR-003**: The lockfile MUST be committed; CI MUST use `npm ci` and run `npm audit`.
 - **FR-004**: Releases MUST follow SemVer with a CHANGELOG (or Changesets), `npm version`
   bumps, and a git tag per release.
@@ -137,22 +162,27 @@ Walk the runbook to retire a version via `npm deprecate`.
 
 ### Key Entities
 
-- **Reusable publish workflow**: the shared org-level CI workflow inherited per package.
-- **Automation token**: the single granular token used by CI, stored as a secret.
-- **Release runbook**: the documented dist-tag + deprecate policy.
+- **Reusable publish workflow**: the shared CI workflow inherited per package.
+- **Trusted publisher**: the per-package configuration on npmjs.com naming the repo and
+  workflow allowed to publish; replaces the token.
+- **Release runbook**: the documented bootstrap, trusted-publisher setup, dist-tag and
+  deprecate policy.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: A release is `git tag vX.Y.Z && git push --tags` and CI does the rest,
-  reproducibly, with no local secrets.
+- **SC-001**: A release is "bump `package.json`, merge to `main`" and CI does the rest,
+  reproducibly, with no secret anywhere.
 - **SC-002**: A second package adopts CI publishing by referencing the reusable workflow,
   with no new publish logic authored.
 - **SC-003**: A failed build/test in CI blocks the publish entirely (no partial release).
 
 ## Assumptions
 
-- Phase 1's correct publish contract is already in place.
-- SemVer + Changesets and CI-on-tag are the constitution's pinned defaults.
-- Provenance, per-package tokens, and the wider install matrix are deferred to Phase 3.
+- Phase 1's correct publish contract is already in place, and the package has been
+  bootstrapped so a trusted publisher can be configured.
+- SemVer + Changesets and CI via trusted publishing are the constitution's pinned
+  defaults (v1.1.0).
+- Provenance comes with trusted publishing and is not a separate deliverable. The wider
+  install matrix is deferred to Phase 3. There are no tokens to scope or rotate.
