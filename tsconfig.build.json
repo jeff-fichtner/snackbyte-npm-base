@@ -1,0 +1,11 @@
+{
+  // The build: src → dist with declarations. Everything else inherits from tsconfig.json.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src/**/*.ts"]
+}
