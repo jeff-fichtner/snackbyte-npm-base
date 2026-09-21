@@ -85,7 +85,9 @@ try {
 
   // 1. a registry that accepts anonymous publishes for our scope, has NO uplink for our
   //    scope (so nothing can fall through to the real registry), and proxies reads for
-  //    everything else so a package's runtime dependencies install
+  //    everything else so a package's runtime dependencies install. Known limit: a
+  //    runtime dependency on ANOTHER package in our scope will not resolve here, by
+  //    the same rule — that case needs the dependency published locally first.
   const storage = join(tmp, 'storage');
   mkdirSync(storage);
   const config = join(tmp, 'config.yaml');
