@@ -26,3 +26,6 @@ npm-debug.log*
 
 # Spec Kit local feature state (per-shell, not shared)
 .specify/feature.json
+
+# Claude Code worktrees (apparatus of this checkout, never product)
+.claude/worktrees/

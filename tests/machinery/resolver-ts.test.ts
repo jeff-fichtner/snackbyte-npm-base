@@ -57,7 +57,9 @@ describe('ts spin-out (default mode, --cli)', () => {
     expect(pkg.bugs).toEqual({ url: `${REPO}/issues` });
     expect(pkg.scripts.init).toBeUndefined();
     expect(pkg.scripts.build).toBe('tsc -p tsconfig.build.json');
-    expect(pkg.scripts.prepublishOnly).toBe('npm run build && npm run check:all');
+    expect(pkg.scripts.prepublishOnly).toBe(
+      'npm run build && npm run check:all && node scripts/check-publish-contract.mjs --exists',
+    );
     expect(pkg.devDependencies['typescript-eslint']).toBeDefined();
   });
 
@@ -88,6 +90,20 @@ describe('ts spin-out (default mode, --cli)', () => {
       expect(imported.stdout.trim()).toBe('Hello, world!');
       const cli = run(process.execPath, ['dist/cli.js', 'world'], out);
       expect(cli.stdout.trim()).toBe('Hello, world!');
+
+      // Phase 1: the pack-and-install smoke test is shipped and passes in the spin-out
+      const smoke = npm(['run', 'smoke:pack'], out);
+      expect(smoke.status, smoke.stdout + smoke.stderr).toBe(0);
+      expect(smoke.stdout).toContain('decoy .env absent');
+      expect(smoke.stdout).toContain('bin ok');
+      expect(exists(join(out, '.env'))).toBe(false);
+
+      // and a dry-run publish runs prepublishOnly (build, check:all, --exists) and
+      // packs exactly the allowlist — the registry-side validation of the bare bin path
+      const dry = npm(['publish', '--dry-run', '--access', 'public'], out);
+      expect(dry.status, dry.stdout + dry.stderr).toBe(0);
+      expect(dry.stderr).not.toContain('.env');
+      expect(dry.stderr).not.toMatch(/bin\[.*\] .* invalid/);
     },
     SPIN_OUT_TIMEOUT_MS,
   );

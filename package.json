@@ -1,6 +1,6 @@
 {
   "name": "@snackbyte/PACKAGE_NAME",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "The npm-library template for the snackbyte ecosystem — the publishable-package sibling of snackbyte-base. The root is a valid ts-mode package; scripts/init.mjs spins a real package out of it.",
   "private": true,
   "keywords": [],
@@ -33,8 +33,11 @@
     "format:check": "prettier --check \"**/*.{ts,js,mjs,json,md}\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check:all": "npm run format:check && npm run lint && npm run typecheck && npm test",
-    "prepublishOnly": "npm run build && npm run check:all"
+    "check:all": "npm run format:check && npm run lint && npm run typecheck && npm run check:contract && npm test",
+    "prepublishOnly": "npm run build && npm run check:all && node scripts/check-publish-contract.mjs --exists",
+    "check:contract": "node scripts/check-publish-contract.mjs",
+    "smoke:pack": "node scripts/smoke-pack.mjs",
+    "smoke:registry": "node scripts/smoke-registry.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

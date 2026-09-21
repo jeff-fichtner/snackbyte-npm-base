@@ -2,7 +2,16 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { productPaths } from '../../scripts/init.mjs';
-import { SPIN_OUT_TIMEOUT_MS, install, npm, resolver, run, scratch, tree } from './helpers.js';
+import {
+  SPIN_OUT_TIMEOUT_MS,
+  exists,
+  install,
+  npm,
+  resolver,
+  run,
+  scratch,
+  tree,
+} from './helpers.js';
 
 // The explicit opt-out, without a CLI: source-shipped .mjs, no build, the js publish
 // contract, the relaxed checkJs profile, and green on its own gate.
@@ -45,7 +54,9 @@ describe('js spin-out (--source=js, no CLI)', () => {
     expect(pkg.files).toEqual(['src/', 'README.md', 'LICENSE']);
     expect(pkg.scripts.build).toBeUndefined();
     expect(pkg.scripts.typecheck).toBe('tsc');
-    expect(pkg.scripts.prepublishOnly).toBe('npm run check:all');
+    expect(pkg.scripts.prepublishOnly).toBe(
+      'npm run check:all && node scripts/check-publish-contract.mjs --exists',
+    );
     expect(pkg.devDependencies['typescript-eslint']).toBeUndefined();
     expect(pkg.devDependencies.typescript).toBeDefined();
     // a trailing .git on --repo is normalised, not doubled
@@ -72,6 +83,13 @@ describe('js spin-out (--source=js, no CLI)', () => {
         out,
       );
       expect(imported.stdout.trim()).toBe('Hello, world!');
+
+      // Phase 1: the pack-and-install smoke test passes in js mode too (no bin here)
+      const smoke = npm(['run', 'smoke:pack'], out);
+      expect(smoke.status, smoke.stdout + smoke.stderr).toBe(0);
+      expect(smoke.stdout).toContain('decoy .env absent');
+      expect(smoke.stdout).not.toContain('bin ok');
+      expect(exists(join(out, '.env'))).toBe(false);
     },
     SPIN_OUT_TIMEOUT_MS,
   );

@@ -27,9 +27,10 @@ Exactly what a spin-out is born with. Anything not here never crosses.
 | `tests/index.test.ts` | ✔ | — | root | none |
 | `tests/index.test.mjs` | — | ✔ | `variants/js/tests/index.test.mjs` | none |
 
-Phase 1 extends this table with `scripts/check-publish-contract.mjs`,
-`scripts/smoke-pack.mjs`, `scripts/smoke-registry.mjs`, `RELEASING.md`, `CLAUDE.md`,
-`environments.json`, `.github/workflows/release.yml` and `.github/workflows/ci.yml`.
+Phase 1 extended this table (both modes) with `scripts/check-publish-contract.mjs`,
+`scripts/smoke-pack.mjs`, `scripts/smoke-registry.mjs`, `.github/workflows/release.yml`,
+`.github/workflows/ci.yml`, `environments.json`, `RELEASING.md` and `CLAUDE.md` (from
+`CLAUDE.pkg.md`, substituted) — see `specs/001-phase-1-ship-one-package/data-model.md`.
 
 ## The mode matrix (what differs in the generated `package.json`)
 

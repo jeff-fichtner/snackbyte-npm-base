@@ -93,11 +93,16 @@ Those commands are owned by
 [`snackbyte-speckit-engine`](https://github.com/jeff-fichtner/snackbyte-speckit-engine);
 its README is the source if they drift from what is written here.
 
+## 7. Publishing
+
+The spin-out carries its own publish path: `RELEASING.md` (bootstrap publish first,
+then the trusted publisher on npmjs.com, then bump-and-merge), `npm run smoke:pack` and
+`npm run smoke:registry` as the checks before that first publish, and a dormant
+`.github/workflows/release.yml` that publishes by trusted publishing once the trusted
+publisher exists. `CLAUDE.md` in the spin-out carries the rules for agents.
+
 ## Not yet covered
 
-- **Publishing.** The release workflow, the runbook and the smoke tests arrive with
-  Phase 1 (`specs/001-phase-1-ship-one-package`). Until then, the spin-out is correct
-  but has no publish path of its own.
 - **A library beside a deployed app in one repo** (the `--out=packages/<name>` case)
   needs a root-level workflow pointed into the subdirectory and a tag prefix in the
   release-flow action. Both are a later phase; the resolver already writes into a

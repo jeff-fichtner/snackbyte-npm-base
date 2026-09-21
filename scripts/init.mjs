@@ -61,6 +61,16 @@ export const ALLOWLIST = Object.freeze([
   { path: 'src/cli.mjs', modes: ['js'], cli: true, from: 'variants/js/src/cli.mjs' },
   { path: 'tests/index.test.ts', modes: ['ts'] },
   { path: 'tests/index.test.mjs', modes: ['js'], from: 'variants/js/tests/index.test.mjs' },
+  // Phase 1 — shippable: the contract check, the two smoke tests, the dormant
+  // workflows, the runbook, and the package-level agent contract.
+  { path: 'scripts/check-publish-contract.mjs', modes: MODES },
+  { path: 'scripts/smoke-pack.mjs', modes: MODES },
+  { path: 'scripts/smoke-registry.mjs', modes: MODES },
+  { path: '.github/workflows/release.yml', modes: MODES },
+  { path: '.github/workflows/ci.yml', modes: MODES },
+  { path: 'environments.json', modes: MODES },
+  { path: 'RELEASING.md', modes: MODES },
+  { path: 'CLAUDE.md', modes: MODES, from: 'CLAUDE.pkg.md', substitute: true },
 ]);
 
 /**
@@ -214,7 +224,8 @@ function generatePackageJson({ mode, cli, name, repo, author, description }) {
     pkg.files = ['src/', 'README.md', 'LICENSE'];
     delete scripts.build;
     scripts.typecheck = 'tsc';
-    scripts.prepublishOnly = 'npm run check:all';
+    scripts.prepublishOnly =
+      'npm run check:all && node scripts/check-publish-contract.mjs --exists';
     delete devDependencies['typescript-eslint'];
   }
   pkg.scripts = scripts;

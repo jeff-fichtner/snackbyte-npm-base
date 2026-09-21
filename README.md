@@ -7,9 +7,11 @@ contract, the check gate, TypeScript by default, and — from Phase 1 — the sm
 and a CI publish path with no token anywhere. You never re-solve `exports`, `files`, or
 provenance from scratch again.
 
-> **Status:** Phase 0 built — the template exists and spins out in both modes.
-> Phase 1 (publish contract check, smoke tests, the release workflow and runbook) is
-> next. The roadmap is the [Spec Kit](https://github.com/github/spec-kit) specs under
+> **Status:** Phases 0 and 1 built — the template spins out in both modes, and a
+> spin-out is shippable: a publish-contract check in its gate, `smoke:pack` and
+> `smoke:registry`, a dormant OIDC release workflow, a PR check workflow, and the
+> runbook. Phase 2 (the reusable publish workflow, SemVer discipline) is next. The
+> roadmap is the [Spec Kit](https://github.com/github/spec-kit) specs under
 > [`specs/`](./specs), governed by the [constitution](./.specify/memory/constitution.md).
 
 ## Spin out a package
@@ -45,7 +47,7 @@ rigour as a package earns more consumers.
 - **[`SPIN-UP.md`](./SPIN-UP.md)** — the resolver handoff.
 - **[`specs/`](./specs)** — the staged roadmap, one spec per phase:
   - [`000-phase-0-template-exists`](./specs/000-phase-0-template-exists/spec.md) — the template itself **(built)**
-  - [`001-phase-1-ship-one-package`](./specs/001-phase-1-ship-one-package/spec.md) — ship one correct package today
+  - [`001-phase-1-ship-one-package`](./specs/001-phase-1-ship-one-package/spec.md) — ship one correct package today **(built)**
   - [`002-phase-2-repeatable-safe`](./specs/002-phase-2-repeatable-safe/spec.md) — CI publish by trusted publishing, SemVer discipline
   - [`003-phase-3-trustworthy-scale`](./specs/003-phase-3-trustworthy-scale/spec.md) — audited deps, install matrix, hygiene docs
   - [`004-phase-4-fleet-ecosystem`](./specs/004-phase-4-fleet-ecosystem/spec.md) — shared release tooling across packages
@@ -56,7 +58,8 @@ The root **is** a valid `ts`-mode package — `src/`, `tests/`, the configs — 
 template proves its default shape with its own gate. `variants/js/` holds the files that
 differ in `js` mode. `scripts/init.mjs` owns the product allowlist and does the spin-out;
 `tests/machinery/` spins out into temp directories in both modes and asserts the tree,
-the contract, and a green `check:all` in each. Everything under `specs/`, `.specify/`,
+the contract, and a green `check:all` + `smoke:pack` in each (`SMOKE_REGISTRY=1` opts
+the Verdaccio round-trip in). `CLAUDE.pkg.md` becomes a spin-out's `CLAUDE.md`. Everything under `specs/`, `.specify/`,
 `.claude/`, `scripts/`, `variants/` and `tests/machinery/`, plus this file and
 `SPIN-UP.md`, is apparatus: it develops the template and never reaches a spin-out.
 

@@ -31,7 +31,9 @@ npx PACKAGE_NAME world
 ## Releases
 
 Released from CI by npm trusted publishing; every version on the registry carries a
-provenance attestation naming the commit and workflow that built it.
+provenance attestation naming the commit and workflow that built it. `RELEASING.md`
+is the runbook; `npm run smoke:pack` and `npm run smoke:registry` are the checks that
+run before the first publish.
 
 ## License
 
