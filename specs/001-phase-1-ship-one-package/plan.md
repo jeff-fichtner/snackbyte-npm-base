@@ -100,8 +100,11 @@ tests/machinery/
    product accidentally left private skips with a message instead of failing.
 3. **npm ≥ 11.5 for OIDC.** The publish job runs `npm install -g npm@latest` before
    publishing. Recorded as a thing to re-verify when spec-render adopts the workflow.
-4. **`smoke:registry` is credential-free and offline from npmjs.org.** Verdaccio on a
-   free localhost port with `publish: $anonymous` on `@snackbyte/*`; a project-local
+4. **`smoke:registry` is credential-free and never publishes to npmjs.org.** Verdaccio
+   on a free localhost port with `publish: $anonymous` on `@snackbyte/*` and no uplink
+   for that scope, plus a read-only `npmjs` proxy for everything else so runtime
+   dependencies install (added 2026-09-20 — the first cut had no uplink and a package
+   with dependencies could not install by name); a project-local
    `.npmrc` (git-ignored) carries `registry=` and a dummy `_authToken`; the script
    removes it on exit, success or failure, so it can never redirect a real publish.
 5. **The bootstrap is step one of the runbook**, with the trusted-publisher setup as

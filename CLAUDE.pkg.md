@@ -27,7 +27,8 @@ contract check) so a red tree cannot be published.
 - `npm run smoke:pack` before any publish: packs the tarball, proves a planted `.env`
   is not in it, installs it into a clean consumer, imports by name, runs the bin.
 - `npm run smoke:registry` before the **first** publish: the real `npm publish` code
-  path against a throwaway local registry, then an install by name. Never touches
+  path against a throwaway local registry, then an install by name with the package's
+  dependencies resolving through a read-only proxy. Nothing is ever published to
   npmjs.org. It writes a project-local `.npmrc` and deletes it; that file is
   git-ignored and must never be committed.
 

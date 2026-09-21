@@ -4,7 +4,9 @@
  * nothing real. Starts a throwaway Verdaccio on localhost, runs the REAL `npm publish`
  * code path against it (so `prepublishOnly` — build, check:all, --exists — fires),
  * installs the package BY NAME from that registry into a fresh consumer, imports it and
- * runs its bin. Credential-free; npmjs.org is never contacted.
+ * runs its bin. Credential-free; nothing is ever PUBLISHED to npmjs.org — the local
+ * registry proxies reads for everything outside our scope, so a package's runtime
+ * dependencies resolve, but our scope has no uplink and cannot leak through.
  *
  *   npm run smoke:registry
  *
@@ -81,7 +83,9 @@ try {
   const port = await freePort();
   const registry = `http://localhost:${port}/`;
 
-  // 1. a registry that accepts anonymous publishes for our scope and knows no uplinks
+  // 1. a registry that accepts anonymous publishes for our scope, has NO uplink for our
+  //    scope (so nothing can fall through to the real registry), and proxies reads for
+  //    everything else so a package's runtime dependencies install
   const storage = join(tmp, 'storage');
   mkdirSync(storage);
   const config = join(tmp, 'config.yaml');
@@ -93,7 +97,9 @@ try {
       '  htpasswd:',
       `    file: ${join(tmp, 'htpasswd')}`,
       '    max_users: -1',
-      'uplinks: {}',
+      'uplinks:',
+      '  npmjs:',
+      '    url: https://registry.npmjs.org/',
       'packages:',
       `  '${pkg.name.split('/')[0]}/*':`,
       '    access: $all',
@@ -101,6 +107,7 @@ try {
       '    unpublish: $anonymous',
       "  '**':",
       '    access: $all',
+      '    proxy: npmjs',
       'log: { type: stdout, format: pretty, level: warn }',
       '',
     ].join('\n'),

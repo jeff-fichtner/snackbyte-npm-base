@@ -103,10 +103,11 @@ compiling packages and only bites at publish time. Depends on the contract (P1).
 A package author runs the shipped `smoke:pack` script: pack the tarball, install it in
 a *separate* throwaway project, import the export and run the `bin` — testing what
 users actually get rather than the working tree. A second shipped script,
-`smoke:registry`, goes one step further with no credentials and zero touch to
-npmjs.org: a throwaway local registry (Verdaccio), the *real* `npm publish` code path
-(so `prepublishOnly` fires), then `npm install` **by name** into a fresh project and
-run. A project-local `.npmrc` carries the local registry's dummy token and is
+`smoke:registry`, goes one step further with no credentials and nothing ever published
+to npmjs.org: a throwaway local registry (Verdaccio) with a read-only proxy for
+everything outside our scope, the *real* `npm publish` code path (so `prepublishOnly`
+fires), then `npm install` **by name** into a fresh project — the package's runtime
+dependencies resolving through the proxy — and run. A project-local `.npmrc` carries the local registry's dummy token and is
 git-ignored, so it can neither be committed nor redirect a real publish.
 
 **Why this priority**: Constitution VI — correctness is proven against the artifact, not
@@ -122,8 +123,10 @@ confirm success on a clean machine.
 2. **Given** a decoy `.env` planted in the working tree, **When** packed, **Then** it is
    absent from the tarball.
 3. **Given** `smoke:registry`, **When** run, **Then** the package publishes to the local
-   registry through `prepublishOnly`, installs by name into a fresh project, and runs —
-   and npmjs.org is never contacted.
+   registry through `prepublishOnly`, installs by name into a fresh project with its
+   runtime dependencies, and runs — and nothing is published to npmjs.org. *(Amended
+   2026-09-20: the first version proxied nothing, so a package with dependencies could
+   not install by name; caught before the first real graduate used it.)*
 
 ---
 

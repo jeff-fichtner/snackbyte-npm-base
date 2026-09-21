@@ -1,4 +1,5 @@
 import { afterAll, describe, expect, it } from 'vitest';
+import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SPIN_OUT_TIMEOUT_MS, exists, install, npm, resolver, scratch } from './helpers.js';
 
@@ -26,6 +27,27 @@ describe.skipIf(!optIn)('smoke:registry in a ts spin-out (SMOKE_REGISTRY=1)', ()
       expect(r.status, r.stderr).toBe(0);
       const i = install(out);
       expect(i.status, i.stderr).toBe(0);
+
+      // A real package has runtime dependencies; a by-name install from the local
+      // registry has to resolve them through the read-only proxy. Give the spin-out one
+      // (nanoid: tiny, typed, dependency-free) and make the export use it, so a registry
+      // with no uplink — the first version of the script — fails here instead of on
+      // the first real graduate.
+      const dep = npm(['install', '--save', 'nanoid@5', '--no-audit', '--no-fund'], out);
+      expect(dep.status, dep.stderr).toBe(0);
+      writeFileSync(
+        join(out, 'src/index.ts'),
+        [
+          "import { nanoid } from 'nanoid';",
+          '',
+          'export function hello(name: string): string {',
+          '  return `Hello, ${name}! (${nanoid(4)})`;',
+          '}',
+          '',
+        ].join('\n'),
+      );
+      // nanoid ships its own types and has no dependencies, so the strict build passes
+
       const smoke = npm(['run', 'smoke:registry'], out);
       expect(smoke.status, smoke.stdout + smoke.stderr).toBe(0);
       expect(smoke.stdout).toContain('published @snackbyte/reg-ts@0.1.0 to the local registry');
