@@ -1,6 +1,6 @@
 {
   "name": "@snackbyte/PACKAGE_NAME",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "The npm-library template for the snackbyte ecosystem — the publishable-package sibling of snackbyte-base. The root is a valid ts-mode package; scripts/init.mjs spins a real package out of it.",
   "private": true,
   "keywords": [],

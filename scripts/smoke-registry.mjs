@@ -152,7 +152,11 @@ try {
   );
   step(`import ok (exports: ${imported.trim()})`);
 
+  // The bin is invoked as `<bin> smoke`; a CLI whose first argument is a path needs it to
+  // exist, so seed a `smoke/` fixture in the consumer (the stub CLI just greets it).
   if (pkg.bin !== undefined) {
+    mkdirSync(join(consumer, 'smoke'));
+    writeFileSync(join(consumer, 'smoke', 'smoke.md'), '# Smoke\n\nA fixture for the bin.\n');
     const keys = typeof pkg.bin === 'string' ? [pkg.name.split('/')[1]] : Object.keys(pkg.bin);
     for (const key of keys) {
       const link = join(consumer, 'node_modules', '.bin', key);

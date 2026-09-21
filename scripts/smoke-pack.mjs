@@ -20,8 +20,9 @@ const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 /** @param {string} message */
 function fail(message) {
-  console.error(`smoke:pack — FAILED: ${message}`);
-  process.exit(1);
+  // Throw, never process.exit(): an exit inside the try below skips `finally` and leaves
+  // the planted decoy .env in the working tree (found by spec-render, 2026-09-21).
+  throw new Error(message);
 }
 /** @param {string} message */
 const step = (message) => console.log(`smoke:pack — ${message}`);
@@ -37,6 +38,7 @@ const decoy = join(root, '.env');
 const plantedDecoy = !existsSync(decoy);
 if (plantedDecoy) writeFileSync(decoy, 'SMOKE_DECOY=1\n');
 const tmp = mkdtempSync(join(tmpdir(), 'smoke-pack-'));
+let failed = false;
 
 try {
   // 1. pack, and read what went into the tarball
@@ -77,8 +79,12 @@ try {
   );
   step(`import ok (exports: ${imported.trim()})`);
 
-  // 5. the bin, if any, is linked and runs
+  // 5. the bin, if any, is linked and runs. Invoked as `<bin> smoke`; a CLI whose first
+  //    argument is a path (spec-render's is) needs that path to exist, so seed a `smoke/`
+  //    fixture in the consumer. The template's stub CLI just greets it.
   if (pkg.bin !== undefined) {
+    mkdirSync(join(consumer, 'smoke'));
+    writeFileSync(join(consumer, 'smoke', 'smoke.md'), '# Smoke\n\nA fixture for the bin.\n');
     const keys = typeof pkg.bin === 'string' ? [pkg.name.split('/')[1]] : Object.keys(pkg.bin);
     for (const key of keys) {
       const link = join(consumer, 'node_modules', '.bin', key);
@@ -90,7 +96,11 @@ try {
   }
 
   step('PASSED');
+} catch (error) {
+  failed = true;
+  console.error(`smoke:pack — FAILED: ${error instanceof Error ? error.message : String(error)}`);
 } finally {
   if (plantedDecoy) rmSync(decoy, { force: true });
   rmSync(tmp, { recursive: true, force: true });
 }
+process.exit(failed ? 1 : 0);

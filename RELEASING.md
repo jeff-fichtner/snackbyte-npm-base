@@ -31,6 +31,11 @@ On npmjs.com → the package → _Settings_ → _Trusted publisher_ → GitHub A
 - **Repository**: this repository's name
 - **Workflow filename**: `release.yml`
 - **Environment**: leave empty
+- **Publishing**: allow **direct `npm publish`**. The form labels it "not recommended"
+  next to stage-only; `release.yml` requires direct — stage-only would reject the
+  publish step _after_ the tag exists and burn the version number. Staged publishing
+  (`npm stage publish`, a 2FA approval before a version goes public) is a later phase's
+  candidate, adopted deliberately if at all.
 
 That's the credential. There is no token to create, store, scope or rotate — and
 nothing to leak. If you ever find an `NPM_TOKEN` secret on this repository, delete it;

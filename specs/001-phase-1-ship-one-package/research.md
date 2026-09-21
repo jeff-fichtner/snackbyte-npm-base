@@ -75,6 +75,9 @@
   the first; Node 24 the second.
 - Provenance is generated automatically **for public repositories publishing public
   packages**. A private repository gets no attestation — recorded in `RELEASING.md`.
+- **Verified live, 2026-09-21.** `@snackbyte/spec-render` 0.1.1 published from
+  `release.yml` with no token: SLSA v1 provenance naming the workflow and the commit,
+  Rekor entry present. The "re-verify on the first real graduate" item is closed.
 - Reusable workflows (`workflow_call`): npm validates against the *calling* workflow's
   filename, and `id-token: write` must be granted in both caller and callee. That
   resolves spec 002's "verify at implementation" item in advance: the per-package

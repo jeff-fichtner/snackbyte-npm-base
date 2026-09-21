@@ -73,6 +73,11 @@ npm run build        # ts mode only: dist/ with declarations
 Then write the package. Keep `check:all` green at every step; `prepublishOnly` runs it
 (and the build, in `ts` mode) so a red tree cannot be published.
 
+One GitHub quirk on the **first** pull request: a workflow file that is new in that PR
+(`ci.yml` is, until it reaches `main`) does not run on the PR's _opened_ event. Close
+and reopen the PR and it fires; every later push runs it normally. Seen on this
+template's own first PRs and on spec-render's.
+
 ## 6. Optional last step: Spec Kit and the speckit engine
 
 Neither is inherited from this template. A package that wants spec-driven development

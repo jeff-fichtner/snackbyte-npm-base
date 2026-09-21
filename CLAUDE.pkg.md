@@ -12,15 +12,15 @@ not weaken or bypass it. In particular:
 
 - `exports` is a map and always includes `./package.json`.
 - `files` is an allowlist. Nothing ships that isn't listed; never lean on `.npmignore`.
-- `bin` paths are bare (`dist/cli.js`, never `./dist/cli.js`) — npm strips the prefix
-  on publish and ships no CLI.
+- `bin` paths are bare (`dist/cli.js` or `src/cli.mjs`, never `./…`) — npm strips the
+  prefix on publish and ships no CLI.
 - `engines.node` is a floor with no ceiling. A library must install on the next Node.
 
 ## The gate stays green at every step
 
 `npm run check:all` — format, lint, typecheck, contract, tests — passes before every
-commit, not only at the end. `prepublishOnly` runs it (plus the build, plus the on-disk
-contract check) so a red tree cannot be published.
+commit, not only at the end. `prepublishOnly` runs it (plus the build in a compiled
+package, plus the on-disk contract check) so a red tree cannot be published.
 
 ## Test what users get, not the working tree
 
