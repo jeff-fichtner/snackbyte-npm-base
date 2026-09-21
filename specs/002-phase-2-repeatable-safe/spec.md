@@ -13,7 +13,9 @@ This is where the *standard* starts paying for itself across repos.
 > **Stub note:** Phase stub converted from `PHASES.md`. Refine with `/speckit-clarify`
 > and `/speckit-plan` before implementing. Builds on Phase 1's correct publish contract.
 
-> **Amended 2026-09-20** under constitution v1.1.0: TypeScript is the default source mode; CI publishes by trusted publishing; the first publish of a new package is a bootstrap. See the constitution's amendment log for why. Two things this
+> **Amended 2026-09-20** under constitution v1.1.0: TypeScript is the default source
+> mode; CI publishes by trusted publishing; the first publish of a new package is a
+> bootstrap. See the constitution's amendment log for why. Two things this
 > stub predated: the release-flow action (adopted after v1.0.0), which makes the trigger
 > a version bump merged to `main` rather than a hand-pushed tag; and npm trusted
 > publishing, which replaces the automation token entirely.
@@ -70,8 +72,10 @@ thin caller; confirm it publishes with no publish logic of its own and no secret
    **Then** exactly one names this repo and the calling workflow file.
 
 **To verify at implementation, not assume**: that npm's trusted-publisher match works
-against the *calling* workflow when the publish step lives in a reusable workflow, and
-which `npm` version the publish job needs (OIDC requires ≥ 11.5; upgrade in the job).
+against the *calling* workflow when the publish step lives in a reusable workflow;
+which `npm` version the publish job needs (OIDC requires ≥ 11.5; upgrade in the job);
+and how callers pin the reusable workflow (this repo's tags are template versions, so a
+moving alias like the release-flow action's `v1` would have to be maintained here too).
 
 ---
 
@@ -135,8 +139,9 @@ Walk the runbook to retire a version via `npm deprecate`.
 ### Edge Cases
 
 - What happens when a version bump merges but CI build/test fails — is a partial
-  publish possible? (It must not be: the tag exists, the publish step is gated on the
-  gate passing, and the fix is a new version, never a re-run of the same one.)
+  publish possible? (It must not be: the publish step is gated on the gate passing. A
+  failed run leaves a tag with no publish behind it; recovery follows the release-flow
+  action's own documented path, to be confirmed when this phase is built.)
 - What happens when a trusted-publisher configuration must change? (Edit it on
   npmjs.com; nothing to rotate, nothing shared between packages.)
 - What happens on a pre-release that should never become `latest`?
@@ -151,9 +156,9 @@ Walk the runbook to retire a version via `npm deprecate`.
   version bump merged to `main` and tagged by the release-flow action; publishing from
   a developer machine MUST NOT be part of the path after the bootstrap.
 - **FR-002**: CI MUST authenticate to npm by trusted publishing (OIDC,
-  `permissions: id-token: write`); no long-lived npm token MUST exist in secrets or on
-  a machine; the publish logic MUST live once in a reusable workflow inherited by every
-  package.
+  `permissions: id-token: write`); a long-lived npm token MUST NOT exist in secrets or
+  on a machine; the publish logic MUST live once in a reusable workflow inherited by
+  every package.
 - **FR-003**: The lockfile MUST be committed; CI MUST use `npm ci` and run `npm audit`.
 - **FR-004**: Releases MUST follow SemVer with a CHANGELOG (or Changesets), `npm version`
   bumps, and a git tag per release.

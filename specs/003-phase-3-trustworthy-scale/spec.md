@@ -12,7 +12,9 @@ supply-chain and trust bar for a package strangers depend on.
 > **Stub note:** Phase stub converted from `PHASES.md`. Refine with `/speckit-clarify`
 > and `/speckit-plan` before implementing. Builds on Phase 2's trusted-publishing path.
 
-> **Amended 2026-09-20** under constitution v1.1.0: TypeScript is the default source mode; CI publishes by trusted publishing; the first publish of a new package is a bootstrap. See the constitution's amendment log for why. Two of this
+> **Amended 2026-09-20** under constitution v1.1.0: TypeScript is the default source
+> mode; CI publishes by trusted publishing; the first publish of a new package is a
+> bootstrap. See the constitution's amendment log for why. Two of this
 > phase's stories became inherent to earlier phases: provenance (automatic with trusted
 > publishing, Phase 2) and shipped types (automatic in `ts` mode, Phase 0). They stay
 > below reduced to what remains.
@@ -157,7 +159,7 @@ exist and are accurate.
 - **FR-001**: Every CI release MUST carry a provenance attestation tied to the source
   commit (inherent to trusted publishing), and the README MUST say how to verify it.
 - **FR-002**: The publishing account MUST require 2FA; each package's trusted-publisher
-  configuration MUST name only its own repo and workflow; no npm token MUST exist.
+  configuration MUST name only its own repo and workflow; an npm token MUST NOT exist.
 - **FR-003**: The package MUST have automated dependency updates (Dependabot/Renovate)
   and MUST keep its dependency surface minimal and justified.
 - **FR-004**: A library-API package MUST ship types — inherent in `ts` mode; a

@@ -14,7 +14,9 @@ template you can spin a package out of, the way you spin an app out of `snackbyt
 > testable journeys. Refine with `/speckit-clarify` and `/speckit-plan` before
 > implementing.
 
-> **Amended 2026-09-20** under constitution v1.1.0: TypeScript is the default source mode; CI publishes by trusted publishing; the first publish of a new package is a bootstrap. See the constitution's amendment log for why.
+> **Amended 2026-09-20** under constitution v1.1.0: TypeScript is the default source
+> mode; CI publishes by trusted publishing; the first publish of a new package is a
+> bootstrap. See the constitution's amendment log for why.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -122,8 +124,10 @@ state when to use this template vs `snackbyte-base` and where the phase roadmap 
 - What happens when the template gains a new apparatus file nobody added to any list?
   (Nothing — the boundary is an allowlist, so it is excluded by default.)
 - What happens to the template's own `release.yml`? (`npm publish` refuses a
-  `private: true` package, so the template's copy carries a `SPINUP:` marker the
-  resolver swaps for the live publish step; the template tags but never publishes.)
+  `private: true` package, so the template must tag without publishing while a
+  spin-out publishes — by a step that gates the publish on `package.json`'s `private`
+  being false, or by a `SPINUP:` marker the resolver swaps. Phase 1 owns `release.yml`
+  and decides; Phase 0 keeps the workflow off the allowlist.)
 
 ## Requirements *(mandatory)*
 

@@ -17,7 +17,9 @@ want to package spec-html and use it."
 > the source of the acceptance criteria below and it re-aligns to the template by a
 > conformance PR once this phase lands).
 
-> **Amended 2026-09-20** under constitution v1.1.0: TypeScript is the default source mode; CI publishes by trusted publishing; the first publish of a new package is a bootstrap. See the constitution's amendment log for why.
+> **Amended 2026-09-20** under constitution v1.1.0: TypeScript is the default source
+> mode; CI publishes by trusted publishing; the first publish of a new package is a
+> bootstrap. See the constitution's amendment log for why.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -209,11 +211,11 @@ works; the README's usage example runs as written.
 - CI publishing, changelogs, and dual ESM/CJS are explicitly **deferred** to later
   phases — not needed to be *correct*, only to be *automated*. The OIDC `release.yml`
   and a PR check workflow ship *dormant* with the template so a spin-out is one
-  trusted-publisher configuration away from Phase 2.
+  bootstrap publish and one trusted-publisher configuration away from Phase 2.
 - `@snackbyte/spec-render` is the first graduate. It was published by hand before this
-  template existed; its `DECISIONS.md` (in its repo) is the source of FR-001, FR-004,
-  FR-006 and FR-007, and it adopts the template's scripts and workflow by a conformance
-  PR after this phase lands.
+  template existed; its `DECISIONS.md` (in its repo) is the source of FR-001, FR-004
+  and FR-007 and of the `bin` gotcha FR-006 exists to catch, and it adopts the
+  template's scripts and workflow by a conformance PR after this phase lands.
 - `@snackbyte/auth-client` (TypeScript, in `snackbyte-auth/packages/client-node/`) is
   the second graduate and the reason `ts` mode exists; it will need the subdirectory
   recipe, which is out of scope here.
