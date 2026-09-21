@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { exists, resolver, scratch } from './helpers.js';
+import { TEMPLATE_ROOT, exists, resolver, scratch } from './helpers.js';
 
 // The resolver refuses bad input before writing a byte (spec 000 FR-006/FR-007 and
 // quickstart §5). Each case asserts: non-zero exit, the usage line on stderr, and no
@@ -73,6 +73,15 @@ describe('resolver argument validation', () => {
       ['--name=Not Valid', `--repo=${REPO}`, `--out=${out}`],
       out,
       'not a valid scoped npm package name',
+    );
+  });
+
+  it('refuses an --out inside the template checkout', () => {
+    const out = join(TEMPLATE_ROOT, 'pkg-inside');
+    expectRefusal(
+      ['--name=pkg', `--repo=${REPO}`, `--out=${out}`],
+      out,
+      'inside the template checkout',
     );
   });
 

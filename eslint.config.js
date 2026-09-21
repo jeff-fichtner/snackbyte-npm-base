@@ -7,7 +7,7 @@ import globals from 'globals';
 // Node globals, and eslint-config-prettier last so formatting is Prettier's alone.
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**', '*.tsbuildinfo', 'variants/**'],
+    ignores: ['dist/**', 'node_modules/**', 'coverage/**', '*.tsbuildinfo'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

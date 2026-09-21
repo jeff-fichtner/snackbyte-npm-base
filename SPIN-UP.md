@@ -44,7 +44,8 @@ node scripts/init.mjs --name=<pkg> --repo=<url> --out=<dir> [--source=ts|js] [--
 
 The resolver refuses — before writing anything — a missing required flag, an unknown
 flag (a typo like `--souce=js` must not silently produce a `ts` package), a bad
-`--source`, a non-http(s) `--repo`, an invalid name, or a non-empty `--out`.
+`--source`, a non-http(s) `--repo`, an invalid name, a non-empty `--out`, or an `--out`
+inside the template checkout.
 
 ## 4. What you get
 

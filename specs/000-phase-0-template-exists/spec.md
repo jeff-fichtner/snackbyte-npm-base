@@ -121,6 +121,8 @@ state when to use this template vs `snackbyte-base` and where the phase roadmap 
 - What happens when the resolver is run twice, or on an already-resolved package?
 - What happens if a spin-out forgets to run the resolver and publishes template
   placeholders? (The template guard should make this loud, not silent.)
+- What happens when `--out` points inside the template checkout? (Refused: the
+  spin-out would be linted, tested and committed as part of the template.)
 - What happens when the template gains a new apparatus file nobody added to any list?
   (Nothing — the boundary is an allowlist, so it is excluded by default.)
 - What happens to the template's own `release.yml`? (`npm publish` refuses a

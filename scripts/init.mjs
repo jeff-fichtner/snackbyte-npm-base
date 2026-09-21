@@ -26,7 +26,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const TEMPLATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -140,6 +140,11 @@ function resolveRepo(raw) {
 function resolveOut(raw) {
   if (typeof raw !== 'string' || raw.trim() === '') refuse('--out is required');
   const out = resolve(raw.trim());
+  // A spin-out inside the template checkout would be linted, tested and — worst —
+  // committed as part of the template. Refuse it outright.
+  if (out === TEMPLATE_ROOT || out.startsWith(TEMPLATE_ROOT + sep)) {
+    refuse(`--out "${out}" is inside the template checkout; spin out somewhere else`);
+  }
   if (existsSync(out)) {
     if (!statSync(out).isDirectory()) refuse(`--out "${out}" exists and is not a directory`);
     if (readdirSync(out).length > 0) refuse(`--out "${out}" exists and is not empty`);
