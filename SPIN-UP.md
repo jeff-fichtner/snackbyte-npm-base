@@ -101,9 +101,15 @@ then the trusted publisher on npmjs.com, then bump-and-merge), `npm run smoke:pa
 `.github/workflows/release.yml` that publishes by trusted publishing once the trusted
 publisher exists. `CLAUDE.md` in the spin-out carries the rules for agents.
 
-## Not yet covered
+## 8. When the package shares a repository with something else
 
-- **A library beside a deployed app in one repo** (the `--out=packages/<name>` case)
-  needs a root-level workflow pointed into the subdirectory and a tag prefix in the
-  release-flow action. Both are a later phase; the resolver already writes into a
-  subdirectory fine.
+`--out=<repo>/packages/<name>` works as-is; the workflows the resolver writes inside the
+package then have to move to the repo root and be pointed back in. **`SUBDIR-LAYOUT.md`**
+is that playbook — six edits per workflow and a checklist — on top of the release-flow
+action's "Two releasables in one repository."
+
+## What is a later phase
+
+Automated bumps and changelogs, a shared reusable publish workflow, dependency
+automation and the install matrix. A spin-out's `CLAUDE.md` names them so an agent
+reports back instead of building them in the package.

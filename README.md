@@ -9,8 +9,9 @@ provenance from scratch again.
 
 > **Status:** Phases 0 and 1 built — the template spins out in both modes, and a
 > spin-out is shippable: a publish-contract check in its gate, `smoke:pack` and
-> `smoke:registry`, a dormant OIDC release workflow, a PR check workflow, and the
-> runbook. Phase 2 (the reusable publish workflow, SemVer discipline) is next. The
+> `smoke:registry`, a dormant OIDC release workflow, a PR check workflow, the runbook,
+> and the subdirectory recipe. Phase 2 (the reusable publish workflow, SemVer
+> discipline) is next, when a third package exists. The
 > roadmap is the [Spec Kit](https://github.com/github/spec-kit) specs under
 > [`specs/`](./specs), governed by the [constitution](./.specify/memory/constitution.md).
 
@@ -45,6 +46,8 @@ rigour as a package earns more consumers.
   deprecate-never-unpublish, no laptop publishes) and the pinned defaults (scope,
   source mode, module format, license, publish path, Node floor).
 - **[`SPIN-UP.md`](./SPIN-UP.md)** — the resolver handoff.
+- **[`SUBDIR-LAYOUT.md`](./SUBDIR-LAYOUT.md)** — when the package shares a repository
+  with another releasable.
 - **[`specs/`](./specs)** — the staged roadmap, one spec per phase:
   - [`000-phase-0-template-exists`](./specs/000-phase-0-template-exists/spec.md) — the template itself **(built)**
   - [`001-phase-1-ship-one-package`](./specs/001-phase-1-ship-one-package/spec.md) — ship one correct package today **(built)**
@@ -82,11 +85,28 @@ Assume nobody will ever download it; build every package as if a million people 
 The discipline is cheap up front and prevents the irreversible mistakes (a leaked
 secret in a tarball, a wrong `exports`, an unpublishable bad version).
 
+## What it does not do yet
+
+Each item is a phase spec, so a package that needs it reports back rather than building
+its own. A spin-out's `CLAUDE.md` says the same to the agent working there.
+
+- **Phase 2** — Changesets for the bump + changelog; one reusable publish workflow that
+  every package calls (npm matches a trusted publisher by the _calling_ workflow's
+  filename, verified); a dist-tag policy. Triggered by a third package, or by the first
+  template-wide workflow change.
+- **Phase 3** — Dependabot/Renovate, the Node install matrix, `SECURITY.md` and
+  contribution notes. Triggered by interest you can attribute to someone you don't know.
+- **Phase 4** — fleet-wide policy propagation. Not soon.
+
+Covered, since 0.6.0: a package that shares a repository with another releasable —
+[`SUBDIR-LAYOUT.md`](./SUBDIR-LAYOUT.md), on top of the release-flow action's
+`tag-prefix` and `package-json` inputs (1.1.0).
+
 ## Graduates
 
 - **`@snackbyte/spec-render`** — the first, published by hand before this template
   existed. Its `DECISIONS.md` is the raw material Phase 1 was extracted from; it
   re-aligns to the template by a conformance PR once Phase 1 lands.
 - **`@snackbyte/auth-client`** — the second, TypeScript, and the reason `ts` mode is
-  the default. It will live in a subdirectory of `snackbyte-auth`, which needs the
-  monorepo recipe (a later phase).
+  the default. It will live in a subdirectory of `snackbyte-auth`, by
+  [`SUBDIR-LAYOUT.md`](./SUBDIR-LAYOUT.md).

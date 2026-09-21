@@ -41,6 +41,28 @@ to `main`_; CI publishes by trusted publishing. No npm token exists anywhere and
 should be created. Never `npm publish` from a machine after the bootstrap. Never
 `npm unpublish` — deprecate and roll forward.
 
+## What the template does not do yet — report back, don't improvise
+
+This package was spun from `snackbyte-npm-base`. Some things it will eventually need
+are the _template's_ to provide, so that every package gets the same answer. If you
+find yourself about to build one of these here, stop and say "this is snackbyte-npm-base
+Phase N" instead:
+
+- **Automated version bumps and a changelog** (Changesets) — Phase 2. Today the release
+  ritual is a manual bump in `package.json`; a forgotten bump fails loudly, a wrong bump
+  is your judgment. Do not add a release tool here.
+- **A shared, reusable publish workflow** — Phase 2. Today `release.yml` is a copy; a
+  template fix reaches this package by a small PR. Do not fork the workflow's logic.
+- **Dependabot/Renovate, an install matrix across Node versions, `SECURITY.md`** —
+  Phase 3, when strangers depend on the package.
+- **Dual ESM/CJS** — never by default; only on a real CJS consumer's demand, recorded in
+  this package's spec or plan.
+- **Sharing a repository with another releasable** (a library beside a deployed app) —
+  covered: the template's `SUBDIR-LAYOUT.md` and the release-flow action's "Two
+  releasables in one repository." Follow those; do not invent a layout.
+
+The phase specs live under `specs/` in the template repository.
+
 ## Defaults you inherit
 
 From `snackbyte-npm-base`'s constitution: `@snackbyte/*` scope, ESM-only, MIT, Node
