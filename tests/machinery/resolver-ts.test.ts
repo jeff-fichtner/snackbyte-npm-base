@@ -56,7 +56,9 @@ describe('ts spin-out (default mode, --cli)', () => {
     expect(pkg.homepage).toBe(`${REPO}#readme`);
     expect(pkg.bugs).toEqual({ url: `${REPO}/issues` });
     expect(pkg.scripts.init).toBeUndefined();
-    expect(pkg.scripts.build).toBe('tsc -p tsconfig.build.json');
+    expect(pkg.scripts.build).toBe(
+      'node --eval "fs.rmSync(\'dist\', { recursive: true, force: true })" && tsc -p tsconfig.build.json',
+    );
     expect(pkg.scripts.prepublishOnly).toBe(
       'npm run build && npm run check:all && node scripts/check-publish-contract.mjs --exists',
     );

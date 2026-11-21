@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from 'vitest';
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { SPIN_OUT_TIMEOUT_MS, exists, install, npm, resolver, scratch } from './helpers.js';
 
@@ -48,7 +48,20 @@ describe.skipIf(!optIn)('smoke:registry in a ts spin-out (SMOKE_REGISTRY=1)', ()
       );
       // nanoid ships its own types and has no dependencies, so the strict build passes
 
-      const smoke = npm(['run', 'smoke:registry'], out);
+      // An npm_config_registry in the environment outranks the project .npmrc the script
+      // writes, so the publish must name the local registry itself. Point the environment
+      // at the real registry, with empty user and global configs so no real credential is
+      // in reach, and the publish must still land locally.
+      const noCredentials = join(s.dir, 'no-credentials');
+      mkdirSync(noCredentials);
+      writeFileSync(join(noCredentials, 'user-npmrc'), '');
+      writeFileSync(join(noCredentials, 'global-npmrc'), '');
+      const smoke = npm(['run', 'smoke:registry'], out, {
+        ...process.env,
+        npm_config_registry: 'https://registry.npmjs.org/',
+        npm_config_userconfig: join(noCredentials, 'user-npmrc'),
+        npm_config_globalconfig: join(noCredentials, 'global-npmrc'),
+      });
       expect(smoke.status, smoke.stdout + smoke.stderr).toBe(0);
       expect(smoke.stdout).toContain('published @snackbyte/reg-ts@0.1.0 to the local registry');
       expect(smoke.stdout).toContain('installed by name');
