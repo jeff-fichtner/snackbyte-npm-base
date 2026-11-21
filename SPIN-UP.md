@@ -114,7 +114,7 @@ publisher exists. `CLAUDE.md` in the spin-out carries the rules for agents.
 
 `--out=<repo>/packages/<name>` works as-is; the workflows the resolver writes inside the
 package then have to move to the repo root and be pointed back in. **`SUBDIR-LAYOUT.md`**
-is that playbook — six edits per workflow and a checklist — on top of the release-flow
+is that playbook — one root merge gate, the release edits and a checklist — on top of the release-flow
 action's "Two releasables in one repository."
 
 ## What is a later phase
