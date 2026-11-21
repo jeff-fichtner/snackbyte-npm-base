@@ -78,6 +78,10 @@ One GitHub quirk on the **first** pull request: a workflow file that is new in t
 and reopen the PR and it fires; every later push runs it normally. Seen on this
 template's own first PRs and on spec-render's.
 
+The check to require in the repository's branch protection is **`validate (merge
+gate)`**, the one job `ci.yml` runs. Every check is a step of that job, because GitHub
+bills each job as at least a whole minute; add a new check as a step, never as a job.
+
 ## 6. Optional last step: Spec Kit and the speckit engine
 
 Neither is inherited from this template. A package that wants spec-driven development
