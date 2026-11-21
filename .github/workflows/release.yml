@@ -1,66 +1,122 @@
-# Release flow — consumes jeff-fichtner/snackbyte-release-flow-action@v1 (Recipe B,
-# library / package-json strategy) and publishes to npm by TRUSTED PUBLISHING.
+# Release flow: consumes jeff-fichtner/snackbyte-release-flow-action (Recipe B, library /
+# package-json strategy) and publishes to npm by TRUSTED PUBLISHING.
 #
-# The ritual: bump `version` in package.json, merge to main. The Action tags v<version>
-# verbatim; the gated step below publishes. A forgotten bump means the tag already
-# exists and the Action fails loudly — that is the guard, not a bug.
+# The ritual: bump `version` in package.json, merge to main. The `release` job runs the
+# check gate on what landed, then the Action tags v<version> verbatim; the `publish` job
+# publishes. A merge that does not bump the version (docs, chores, Dependabot) has nothing
+# to release: its version is already tagged on an earlier commit of this branch and, for
+# a public package, already on npm, so the run says so and stops, green. A version whose
+# tag exists anywhere else, or whose tag exists but never reached npm, is a collision the
+# Action refuses, loudly.
 #
-# No npm token exists anywhere. `permissions: id-token: write` lets GitHub mint a
-# short-lived OIDC identity for this run and npm accepts it, provided the package's
-# trusted publisher on npmjs.com names this repository and this workflow file. That can
-# only be configured on a package that already exists on npm, so the FIRST publish of a
-# new package is a bootstrap from a maintainer's machine (see RELEASING.md); every
-# publish after it is this workflow. Provenance is attested automatically.
+# Two jobs, because they hold different credentials: `release` may push to the repository
+# (contents: write) and `publish` may publish to npm (id-token: write); neither token ever
+# shares a job with the other. Every job bills at least a whole minute, so the checks are
+# steps of the tagging job, before the Action: a failed check leaves no tag.
 #
-# One file serves the template and every package spun out of it: the publish step is
-# gated on package.json's `private`. The template is private → it tags and skips, and
-# says so. A package is not → it publishes. A package accidentally left private skips
-# with a message instead of failing on npm's own refusal.
+# No npm token exists anywhere. `id-token: write` lets GitHub mint a short-lived OIDC
+# identity for the publish job and npm accepts it, provided the package's trusted
+# publisher on npmjs.com names this repository and this workflow file. That can only be
+# configured on a package that already exists on npm, so the FIRST publish of a new
+# package is a bootstrap from a maintainer's machine (see RELEASING.md); every publish
+# after it is this workflow. Provenance is attested automatically.
+#
+# One file serves the template and every package spun out of it: publishing is gated on
+# package.json's `private`. The template is private, so it tags and skips, and says so. A
+# package is not, so it publishes. A package accidentally left private skips with a
+# message instead of failing on npm's own refusal.
+#
+# Every `uses:` is pinned to a full commit SHA with the release it tracks in a comment.
 name: release
 
 on:
   push:
-    branches: [main] # the only release channel (see environments.json)
+    branches: [main] # the release channels (environments.json); work branches run only on their PR
 
 permissions:
-  contents: write # push the derived tag
-  id-token: write # trusted publishing (OIDC) — this is the whole credential
+  contents: read
 
 concurrency:
-  group: release-${{ github.ref_name }} # serialize per branch — no two pushes race
-  cancel-in-progress: false
+  group: release # one group per releasable, every release channel in it
+  cancel-in-progress: false # a release run never cancels
+  queue: max # runs wait their turn; without it GitHub keeps one waiting run and drops the next
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the derived tag
+    outputs:
+      is-env: ${{ steps.release.outputs.is-env }}
+      tag: ${{ steps.release.outputs.tag }}
+      private: ${{ steps.pkg.outputs.private }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0 # full history + tags — the derivation refuses a shallow clone
+          fetch-depth: 0 # full history and tags: the derivation refuses a shallow clone
 
-      - uses: actions/setup-node@v5
+      # Nothing to release when this version's tag already sits on an earlier commit of
+      # this branch and the version is out: on npm for a public package, or tagged at all
+      # for a private one (a tag is the whole of its release). Every other case goes on to
+      # the Action, whose exists-guard refuses a collision loudly.
+      - id: pkg
+        run: |
+          name="$(node -p "require('./package.json').name")"
+          version="$(node -p "require('./package.json').version")"
+          private="$(node -p "require('./package.json').private === true")"
+          echo "private=${private}" >> "$GITHUB_OUTPUT"
+          tag="v${version}"
+          if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null \
+            && git merge-base --is-ancestor "${tag}" HEAD; then
+            if [ "${private}" = "true" ] \
+              || [ "$(npm view "${name}@${version}" version 2>/dev/null)" = "${version}" ]; then
+              echo "released=true" >> "$GITHUB_OUTPUT"
+              echo "::notice::${name}@${version} is already released as ${tag}; this push carries no new version, so there is nothing to release."
+            fi
+          fi
+
+      - if: steps.pkg.outputs.released != 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+
+      # A merge's required check ran against the base it had then, so the gate runs again on
+      # what landed, before any tag is derived.
+      - if: steps.pkg.outputs.released != 'true'
+        run: npm ci && npm run check:all
+
+      - id: release
+        if: steps.pkg.outputs.released != 'true'
+        uses: jeff-fichtner/snackbyte-release-flow-action@01d5fa53356ad4b04b2388a43eda867cc947b670 # v1.2.7
+        with:
+          version-strategy: package-json # library: tag the package.json version verbatim
+
+      - if: steps.release.outputs.is-env == 'true' && steps.pkg.outputs.private == 'true'
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+        run: echo "Private package, so nothing is published. Tagged ${TAG}."
+
+  publish:
+    needs: release
+    if: needs.release.outputs.is-env == 'true' && needs.release.outputs.private != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # trusted publishing (OIDC): this is the whole credential
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
           cache: npm
 
-      # Trusted publishing needs npm >= 11.5; the npm bundled with a Node release may
-      # be older. Cheap, and it tracks npm's own OIDC support.
+      # Trusted publishing needs npm >= 11.5; the npm bundled with a Node release may be
+      # older. Cheap, and it tracks npm's own OIDC support.
       - run: npm install -g npm@latest
 
-      - id: pkg
-        run: echo "private=$(node -p "require('./package.json').private === true")" >> "$GITHUB_OUTPUT"
-
-      - id: release
-        uses: jeff-fichtner/snackbyte-release-flow-action@v1
-        with:
-          version-strategy: package-json # library: tag the package.json version verbatim
-
-      - if: steps.release.outputs.is-env == 'true' && steps.pkg.outputs.private != 'true'
-        run: |
-          npm ci
-          npm publish --access public
+      # prepublishOnly builds (ts mode) and runs check:all, so the dev dependencies install.
+      - run: npm ci && npm publish --access public
         # no NODE_AUTH_TOKEN: the OIDC identity above is the credential
-
-      - if: steps.release.outputs.is-env == 'true' && steps.pkg.outputs.private == 'true'
-        run: echo "private package — tagged ${{ steps.release.outputs.tag }}, not published"

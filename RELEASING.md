@@ -47,14 +47,20 @@ the workflow does not use one.
    `0.1.1` for a fix, `1.0.0` when the API is a promise).
 2. Merge to `main`.
 
-The release-flow action tags `v<version>`; the workflow runs `npm ci` and
+The workflow's `release` job runs `npm ci` and `check:all` on what landed, then the
+release-flow action tags `v<version>`; its `publish` job runs `npm ci` and
 `npm publish --access public`, authenticated by the run's OIDC identity, with
 provenance attested automatically — for a **public** repository publishing a public
 package; a private repository publishes fine but gets no attestation. The published
 version's page on npm shows the commit and workflow that built it.
 
-If you forget the bump, the tag already exists and the action **fails loudly** without
-publishing. Bump and merge again. That guard is deliberate.
+A merge that does not bump the version (docs, a chore, a Dependabot update) releases
+nothing: its version is already tagged on an earlier commit and on npm, so the run
+says so in a notice and ends green. Bump in the merge you mean to release.
+
+The guard against re-releasing stays: a version whose tag already exists on another
+line of history, or whose tag exists but never reached npm, makes the action **fail
+loudly** without publishing. Bump and merge again.
 
 ## 4. A bad version: deprecate, never unpublish
 
@@ -79,9 +85,11 @@ would stand behind. A pre-release goes to another tag:
 
 ## 6. When a run fails after the tag exists
 
-The tag is pushed before the publish step runs, so a red gate leaves a tag with no
-version behind it on npm. Fix forward: bump the version and merge again. Do not
-re-point or delete the tag. (The exact re-run semantics of the release-flow action are
+A failed check stops the `release` job before the action runs, so it leaves no tag:
+fix it and merge again. The tag is pushed before the `publish` job runs, though, so a
+failed publish leaves a tag with no version behind it on npm, and every later merge
+fails loudly on that tag until the version moves. Fix forward: bump the version and
+merge again. Do not re-point or delete the tag. (The exact re-run semantics of the release-flow action are
 its `CONSUMING.md`'s to define.)
 
 ## What never happens

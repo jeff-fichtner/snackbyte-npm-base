@@ -31,10 +31,11 @@ graduates are `@snackbyte/spec-render` (first, JS opt-out) and `@snackbyte/auth-
 
 ## Every merge to `main` is a version
 
-`version-strategy: package-json`: the release-flow action tags `v<version>` and fails
-loudly if the tag exists. So every unit of work bumps `package.json`'s minor, in
+`version-strategy: package-json`: the release-flow action tags `v<version>`. A merge
+whose version is already tagged releases nothing and stays green, so a unit that
+forgets its bump lands untagged. Every unit of work bumps `package.json`'s minor, in
 landing order. `private: true` — a tag is all a release is here; `release.yml`'s
-publish step is gated on `private` and skips.
+publish job is gated on `private` and skips.
 
 ## Working here
 

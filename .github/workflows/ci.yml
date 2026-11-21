@@ -1,6 +1,14 @@
-# The check gate on every pull request — the same command as local: `npm run check:all`.
+# The merge gate on every pull request: one job, `validate (merge gate)`, the check branch
+# protection requires by name (repo config, not this file). It runs the same command as
+# local, `npm run check:all`. Every job bills at least a whole minute, so every check is a
+# step of this one job, never a job of its own.
+#
 # A unit of work is a PR from its first commit, so `pull_request` is the one trigger; a
-# push trigger as well would run everything twice. main is release.yml's.
+# push trigger as well would run everything twice. main is release.yml's, which runs the
+# gate again on what landed before it tags. A newer push to a pull request cancels the run
+# it replaces.
+#
+# Every `uses:` is pinned to a full commit SHA with the release it tracks in a comment.
 name: ci
 
 on:
@@ -14,13 +22,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
+  validate:
+    name: validate (merge gate)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
-          cache: npm # needs package-lock.json committed — do that on the first install (SPIN-UP.md)
+          cache: npm # needs package-lock.json committed: do that on the first install (SPIN-UP.md)
       - run: npm ci
       - run: npm run check:all

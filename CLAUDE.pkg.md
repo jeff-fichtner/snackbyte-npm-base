@@ -49,8 +49,8 @@ find yourself about to build one of these here, stop and say "this is snackbyte-
 Phase N" instead:
 
 - **Automated version bumps and a changelog** (Changesets) — Phase 2. Today the release
-  ritual is a manual bump in `package.json`; a forgotten bump fails loudly, a wrong bump
-  is your judgment. Do not add a release tool here.
+  ritual is a manual bump in `package.json`; a merge without a bump releases nothing, a
+  wrong bump is your judgment. Do not add a release tool here.
 - **A shared, reusable publish workflow** — Phase 2. Today `release.yml` is a copy; a
   template fix reaches this package by a small PR. Do not fork the workflow's logic.
 - **Dependabot/Renovate, an install matrix across Node versions, `SECURITY.md`** —
