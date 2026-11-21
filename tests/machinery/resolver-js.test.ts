@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { productPaths } from '../../scripts/init.mjs';
 import {
   SPIN_OUT_TIMEOUT_MS,
+  TEMPLATE_ROOT,
   exists,
   install,
   npm,
@@ -35,6 +36,13 @@ afterAll(() => s.cleanup());
 describe('js spin-out (--source=js, no CLI)', () => {
   it('contains exactly the product allowlist', () => {
     expect(tree(out)).toEqual(productPaths('js', false));
+  });
+
+  it('carries the template stamp at the template version', () => {
+    const template = JSON.parse(readFileSync(join(TEMPLATE_ROOT, 'package.json'), 'utf8'));
+    const stamp = JSON.parse(readFileSync(join(out, '.template.json'), 'utf8'));
+    expect(stamp).toEqual({ template: 'snackbyte-npm-base', version: template.version });
+    expect(stamp.version).not.toMatch(/^v/);
   });
 
   it('carries no placeholder and no ts-mode leftovers', () => {

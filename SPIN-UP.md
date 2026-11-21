@@ -56,6 +56,18 @@ mode; a stub export in `src/`; a stub CLI if you asked for one; one passing test
 `README.md`, `LICENSE`; the lint, format and TypeScript configs for the mode; and the
 npm-flavour `.gitignore`.
 
+It also gets **`.template.json`**, the template stamp, written by the resolver with this
+template's current version, for example:
+
+```json
+{ "template": "snackbyte-npm-base", "version": "0.11.0" }
+```
+
+Ops reads it to show how far behind its template each repo is (snackbyte-ops
+`docs/template-stamp.md`). Commit it with the rest. When the package later ports the
+changes of a newer template version, it sets `version` to that version in the same
+change. This repository, the template itself, carries no stamp.
+
 Nothing else. Not this repo's `specs/`, not its Spec Kit install, not the resolver, not
 this file. The template's development apparatus never crosses, by construction: the
 resolver copies an allowlist, and a test in this repo asserts a spin-out's tree equals

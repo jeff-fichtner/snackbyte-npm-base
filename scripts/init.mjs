@@ -30,6 +30,7 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const TEMPLATE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const TEMPLATE_NAME = 'snackbyte-npm-base';
 const SCOPE = '@snackbyte';
 const PLACEHOLDER = 'PACKAGE_NAME';
 const MODES = /** @type {const} */ (['ts', 'js']);
@@ -45,6 +46,9 @@ const MODES = /** @type {const} */ (['ts', 'js']);
  */
 export const ALLOWLIST = Object.freeze([
   { path: 'package.json', modes: MODES, from: 'generated' },
+  // The template stamp: which template the package came from, and at which version, so
+  // ops can show how far behind its template it is (snackbyte-ops docs/template-stamp.md).
+  { path: '.template.json', modes: MODES, from: 'generated' },
   { path: 'README.md', modes: MODES, from: 'README.pkg.md', substitute: true },
   { path: 'LICENSE', modes: MODES },
   { path: '.gitignore', modes: MODES },
@@ -233,6 +237,16 @@ function generatePackageJson({ mode, cli, name, repo, author, description }) {
   return JSON.stringify(pkg, null, 2) + '\n';
 }
 
+/**
+ * The template stamp, with this template's current version (no leading `v`). A package
+ * that later ports a newer template version bumps it in the same change.
+ */
+function generateTemplateStamp() {
+  const { version } = JSON.parse(readFileSync(join(TEMPLATE_ROOT, 'package.json'), 'utf8'));
+  // One line, spaced the way Prettier writes it, so the spin-out's format check opens green.
+  return `{ "template": ${JSON.stringify(TEMPLATE_NAME)}, "version": ${JSON.stringify(version)} }\n`;
+}
+
 /** @param {string[]} argv */
 function main(argv) {
   const args = parseArgs(argv);
@@ -259,7 +273,11 @@ function main(argv) {
       const target = join(staging, entry.path);
       mkdirSync(dirname(target), { recursive: true });
       if (entry.from === 'generated') {
-        writeFileSync(target, generatePackageJson({ mode, cli, name, repo, author, description }));
+        const text =
+          entry.path === '.template.json'
+            ? generateTemplateStamp()
+            : generatePackageJson({ mode, cli, name, repo, author, description });
+        writeFileSync(target, text);
         continue;
       }
       let text = readFileSync(join(TEMPLATE_ROOT, entry.from ?? entry.path), 'utf8');
