@@ -1,9 +1,16 @@
 #!/usr/bin/env node
 /**
- * The pack-and-install smoke test (Constitution VI: test what users get, not the
- * working tree). Packs the tarball, proves a planted `.env` is not in it, installs the
- * tarball into a throwaway consumer project, imports the package by name, and runs its
- * `bin` if it has one. The minimum bar before any publish.
+ * The pack-and-install smoke test. It tests what users get, not the working tree: builds
+ * the package fresh when it has a build, packs the tarball, proves a planted `.env` is not
+ * in it, installs the tarball into a throwaway consumer project, imports the package by
+ * name, and runs its `bin` if it has one. The minimum bar before any publish.
+ *
+ * The build runs first so the tarball is what this source produces now: `build` empties
+ * dist/ before compiling, so a module deleted from src/ cannot ship from an old build.
+ *
+ * Each bin runs as `<bin> smoke` and must exit 0. A CLI with no such command (a server
+ * whose no-argument form never exits, say) declares the arguments to pass instead, in
+ * package.json: `"config": { "smokeBinArgs": ["--help"] }`.
  *
  *   npm run smoke:pack
  *
@@ -17,11 +24,28 @@ import { join } from 'node:path';
 const root = process.cwd();
 const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const binArgs = smokeBinArgs(pkg);
+
+/**
+ * The arguments each bin is run with: package.json `config.smokeBinArgs`, or `smoke`.
+ * @param {Record<string, any>} manifest
+ */
+function smokeBinArgs(manifest) {
+  const declared = manifest.config?.smokeBinArgs;
+  if (declared === undefined) return ['smoke'];
+  if (!Array.isArray(declared) || !declared.every((a) => typeof a === 'string')) {
+    console.error(
+      'smoke:pack — FAILED: package.json config.smokeBinArgs must be an array of strings',
+    );
+    process.exit(1);
+  }
+  return declared;
+}
 
 /** @param {string} message */
 function fail(message) {
   // Throw, never process.exit(): an exit inside the try below skips `finally` and leaves
-  // the planted decoy .env in the working tree (found by spec-render, 2026-09-21).
+  // the planted decoy .env in the working tree.
   throw new Error(message);
 }
 /** @param {string} message */
@@ -41,7 +65,11 @@ const tmp = mkdtempSync(join(tmpdir(), 'smoke-pack-'));
 let failed = false;
 
 try {
-  // 1. pack, and read what went into the tarball
+  // 1. build fresh (when there is a build), pack, and read what went into the tarball
+  if (pkg.scripts?.build !== undefined) {
+    run(npm, ['run', 'build'], root);
+    step('built');
+  }
   const packed = JSON.parse(run(npm, ['pack', '--json', '--pack-destination', tmp], root));
   const { filename, files } = packed[0];
   const names = files.map((f) => f.path);
@@ -79,8 +107,8 @@ try {
   );
   step(`import ok (exports: ${imported.trim()})`);
 
-  // 5. the bin, if any, is linked and runs. Invoked as `<bin> smoke`; a CLI whose first
-  //    argument is a path (spec-render's is) needs that path to exist, so seed a `smoke/`
+  // 5. the bin, if any, is linked and runs, with `binArgs` (`smoke` unless declared). A
+  //    CLI whose first argument is a path needs that path to exist, so seed a `smoke/`
   //    fixture in the consumer. The template's stub CLI just greets it.
   if (pkg.bin !== undefined) {
     mkdirSync(join(consumer, 'smoke'));
@@ -90,9 +118,9 @@ try {
       const link = join(consumer, 'node_modules', '.bin', key);
       if (!existsSync(link))
         fail(`bin "${key}" was not linked at ${link} — check the bin path has no "./" prefix`);
-      run(link, ['smoke'], consumer);
+      run(link, binArgs, consumer);
     }
-    step(`bin ok (${keys.join(', ')})`);
+    step(`bin ok (${keys.join(', ')} ${binArgs.join(' ')})`);
   }
 
   step('PASSED');

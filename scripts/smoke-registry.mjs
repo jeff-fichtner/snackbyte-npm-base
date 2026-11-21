@@ -10,10 +10,15 @@
  *
  *   npm run smoke:registry
  *
- * Mechanics carried from @snackbyte/spec-render's DECISIONS §8: Verdaccio 6 disables
- * self-registration, so the scope is `publish: $anonymous`, and the registry address
- * plus a dummy token go in a PROJECT-LOCAL .npmrc — git-ignored — which this script
- * deletes on exit, success or failure, so it can never redirect a real publish.
+ * Verdaccio 6 disables self-registration, so the scope is `publish: $anonymous`, and a
+ * dummy token for the local registry goes in a PROJECT-LOCAL .npmrc — git-ignored — which
+ * this script deletes on exit, success or failure, so it can never redirect a real
+ * publish. The publish and the install both name the local registry on the command line:
+ * an `npm_config_registry` in the environment outranks a project .npmrc, and would
+ * otherwise send this publish to whatever registry it names.
+ *
+ * Each bin runs as `<bin> smoke` and must exit 0, unless package.json declares other
+ * arguments: `"config": { "smokeBinArgs": ["--help"] }`.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:net';
@@ -26,6 +31,23 @@ const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 const npmrc = join(root, '.npmrc');
+const binArgs = smokeBinArgs(pkg);
+
+/**
+ * The arguments each bin is run with: package.json `config.smokeBinArgs`, or `smoke`.
+ * @param {Record<string, any>} manifest
+ */
+function smokeBinArgs(manifest) {
+  const declared = manifest.config?.smokeBinArgs;
+  if (declared === undefined) return ['smoke'];
+  if (!Array.isArray(declared) || !declared.every((a) => typeof a === 'string')) {
+    console.error(
+      'smoke:registry — FAILED: package.json config.smokeBinArgs must be an array of strings',
+    );
+    process.exit(1);
+  }
+  return declared;
+}
 
 /** @param {string} message */
 const step = (message) => console.log(`smoke:registry — ${message}`);
@@ -121,11 +143,13 @@ try {
   await waitFor(`${registry}-/ping`);
   step(`Verdaccio up on ${registry}`);
 
-  // 2. point THIS project at it, with a dummy token, in a git-ignored project-local .npmrc
+  // 2. a dummy token for it, in a git-ignored project-local .npmrc. The registry line is
+  //    a second guard for anything else run here; the publish below names it outright.
   writeFileSync(npmrc, `registry=${registry}\n//localhost:${port}/:_authToken=smoke\n`);
 
-  // 3. the real publish code path — prepublishOnly runs here
-  run(npm, ['publish', '--access', 'public'], root);
+  // 3. the real publish code path — prepublishOnly runs here. `--registry` on the command
+  //    line outranks an npm_config_registry in the environment; the .npmrc does not.
+  run(npm, ['publish', '--access', 'public', '--registry', registry], root);
   step(`published ${pkg.name}@${pkg.version} to the local registry (prepublishOnly ran)`);
 
   // 4. a fresh consumer installs it BY NAME from that registry
@@ -152,8 +176,9 @@ try {
   );
   step(`import ok (exports: ${imported.trim()})`);
 
-  // The bin is invoked as `<bin> smoke`; a CLI whose first argument is a path needs it to
-  // exist, so seed a `smoke/` fixture in the consumer (the stub CLI just greets it).
+  // Each bin runs with `binArgs` (`smoke` unless declared); a CLI whose first argument is
+  // a path needs it to exist, so seed a `smoke/` fixture in the consumer (the stub CLI
+  // just greets it).
   if (pkg.bin !== undefined) {
     mkdirSync(join(consumer, 'smoke'));
     writeFileSync(join(consumer, 'smoke', 'smoke.md'), '# Smoke\n\nA fixture for the bin.\n');
@@ -161,9 +186,9 @@ try {
     for (const key of keys) {
       const link = join(consumer, 'node_modules', '.bin', key);
       if (!existsSync(link)) throw new Error(`bin "${key}" was not linked after a by-name install`);
-      run(link, ['smoke'], consumer);
+      run(link, binArgs, consumer);
     }
-    step(`bin ok (${keys.join(', ')})`);
+    step(`bin ok (${keys.join(', ')} ${binArgs.join(' ')})`);
   }
   step('PASSED');
 } catch (error) {

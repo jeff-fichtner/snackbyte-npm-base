@@ -7,7 +7,7 @@ build/
 coverage/
 *.tsbuildinfo
 
-# Env / secrets — never commit, never ship (Constitution II)
+# Env / secrets — never committed, never in the published tarball
 .env
 .env.*
 !.env.example

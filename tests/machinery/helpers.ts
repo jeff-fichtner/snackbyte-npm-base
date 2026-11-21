@@ -18,8 +18,13 @@ export interface RunResult {
   stderr: string;
 }
 
-export function run(cmd: string, args: string[], cwd: string): RunResult {
-  const r = spawnSync(cmd, args, { cwd, encoding: 'utf8', timeout: SPIN_OUT_TIMEOUT_MS });
+export function run(
+  cmd: string,
+  args: string[],
+  cwd: string,
+  env: NodeJS.ProcessEnv = process.env,
+): RunResult {
+  const r = spawnSync(cmd, args, { cwd, env, encoding: 'utf8', timeout: SPIN_OUT_TIMEOUT_MS });
   return { status: r.status, stdout: r.stdout ?? '', stderr: r.stderr ?? '' };
 }
 
@@ -48,8 +53,8 @@ export function tree(root: string): string[] {
   return out.sort();
 }
 
-export function npm(args: string[], cwd: string): RunResult {
-  return run('npm', args, cwd);
+export function npm(args: string[], cwd: string, env?: NodeJS.ProcessEnv): RunResult {
+  return run('npm', args, cwd, env);
 }
 
 /** `npm install` for a spin-out, quiet and offline-preferring. */

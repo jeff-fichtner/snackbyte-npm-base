@@ -5,8 +5,7 @@
   // Deliberately NOT full `strict`: a source-shipped JS package is usually a graft of
   // working code, and forcing JSDoc annotations onto all of it means rewriting it. This
   // profile keeps the checks that catch real defects (undefined variables, bad calls,
-  // typos, unreachable code) while tolerating annotation-free JS. See
-  // @snackbyte/spec-render's DECISIONS.md §4 for where this profile came from.
+  // typos, unreachable code) while tolerating annotation-free JS.
   "compilerOptions": {
     "target": "ES2023",
     "module": "NodeNext",

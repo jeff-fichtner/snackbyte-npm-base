@@ -24,8 +24,12 @@ package, plus the on-disk contract check) so a red tree cannot be published.
 
 ## Test what users get, not the working tree
 
-- `npm run smoke:pack` before any publish: packs the tarball, proves a planted `.env`
-  is not in it, installs it into a clean consumer, imports by name, runs the bin.
+- `npm run smoke:pack` before any publish: builds fresh (a compiled package's `build`
+  empties `dist/` first), packs the tarball, proves a planted `.env` is not in it,
+  installs it into a clean consumer, imports by name, runs the bin.
+- Both smoke tests run each bin as `<bin> smoke` and require exit 0. A CLI with no
+  `smoke` command declares what to pass instead in `package.json`:
+  `"config": { "smokeBinArgs": ["--help"] }`. Never edit the smoke scripts for it.
 - `npm run smoke:registry` before the **first** publish: the real `npm publish` code
   path against a throwaway local registry, then an install by name with the package's
   dependencies resolving through a read-only proxy. Nothing is ever published to

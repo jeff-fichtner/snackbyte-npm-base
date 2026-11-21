@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * The publish-contract check (Constitution II). The `package.json` publish surface is
- * what strangers depend on and most of its failure modes are silent — a wrong `exports`
+ * The publish-contract check. The `package.json` publish surface is what strangers
+ * depend on, so it is checked on every run of the gate, and most of its failure modes are
+ * silent — a wrong `exports`
  * breaks consumers with no error here; a `bin` path with a "./" prefix is stripped by
  * the registry and ships a package with no CLI. This asserts the contract so drift
  * fails in CI, not on npmjs.org.
@@ -40,7 +41,7 @@ const failures = [];
 /** @param {string} field @param {string} rule */
 const fail = (field, rule) => failures.push(`${field}: ${rule}`);
 
-// name — scoped, so it lands in the org namespace (Principle V). A `private: true`
+// name — scoped, so it lands in the org's namespace and never squats a bare name. A `private: true`
 // package is never published, so its name is not part of the publish contract; that is
 // what lets the template itself (named with a placeholder) pass this check.
 if (
@@ -93,7 +94,7 @@ if (typeof engine !== 'string' || engine.trim() === '') {
 } else if (engine.includes('<')) {
   fail(
     'engines.node',
-    `must not have an upper bound (got "${engine}") — a library must install on the next Node; a bound is a recorded deviation from Principle V`,
+    `must not have an upper bound (got "${engine}") — a library must install on the next Node; a bound is a deliberate exception, with its reason recorded in this package's spec or plan`,
   );
 }
 
