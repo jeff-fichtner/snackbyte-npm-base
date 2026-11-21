@@ -67,6 +67,10 @@ Phase N" instead:
 
 The phase specs live under `specs/` in the template repository.
 
+`.template.json` records the template version this package matches. When you port the
+changes of a newer template version, set its `version` to that version in the same
+change; ops reads it to show how far behind the template the package is.
+
 ## Defaults you inherit
 
 From `snackbyte-npm-base`'s constitution: `@snackbyte/*` scope, ESM-only, MIT, Node

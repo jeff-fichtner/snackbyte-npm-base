@@ -190,6 +190,9 @@ workflow filename is **`release-<name>.yml`** — the file at the repo root — 
   the package directory and know nothing about the repo above it. `smoke:registry` and
   `smoke:pack` work unchanged.
 - **`environments.json`** stays inside the package; the action is pointed at it.
+- **`.template.json`** stays inside the package too. It records the npm-base version the
+  package matches. If the repository root carries a stamp of its own (the sibling came
+  from another template), leave that one alone; the two describe different things.
 - **`RELEASING.md`'s ritual.** Bump `version` in `packages/<name>/package.json`, merge to
   `main`; the action tags `<name>-v<version>`; the publish job publishes.
 

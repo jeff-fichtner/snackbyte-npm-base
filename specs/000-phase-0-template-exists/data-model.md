@@ -40,7 +40,7 @@ Phase 1 extended this table (both modes) with `scripts/check-publish-contract.mj
 | `exports["./package.json"]` | `"./package.json"` | `"./package.json"` |
 | `files` | `["dist/", "README.md", "LICENSE"]` | `["src/", "README.md", "LICENSE"]` |
 | `bin` (with `--cli`) | `{ "<unscoped>": "dist/cli.js" }` | `{ "<unscoped>": "src/cli.mjs" }` |
-| `scripts.build` | `tsc -p tsconfig.build.json` | (absent) |
+| `scripts.build` | empty `dist/`, then `tsc -p tsconfig.build.json` (since 0.9.0) | (absent) |
 | `scripts.typecheck` | `tsc --noEmit` | `tsc` (noEmit is in the js tsconfig) |
 | `scripts.prepublishOnly` | `npm run build && npm run check:all` | `npm run check:all` |
 | `scripts.check:all` | `format:check && lint && typecheck && test` | same |
